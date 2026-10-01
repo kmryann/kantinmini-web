@@ -1,0 +1,141 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  ADMIN
+  MANAGER
+  CASHIER
+}
+
+enum TableStatus {
+  AVAILABLE
+  CASH_PENDING
+  PROSES
+  DIHIDANGKAN
+}
+
+enum OrderType {
+  DINE_IN
+  TAKEAWAY
+}
+
+enum OrderStatus {
+  PENDING_PAYMENT
+  PROSES
+  DIHIDANGKAN
+  SELESAI
+  VOID
+}
+
+enum PaymentMethod {
+  QRIS
+  CASH
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  EXPIRED
+  CANCELLED
+}
+
+model User {
+  id           String     @id @default(uuid())
+  name         String
+  email        String?    @unique
+  username     String?    @unique
+  passwordHash String?
+  pinHash      String? // Digunakan untuk PIN Cepat Kasir (4-6 digit) & Supervisor Override
+  role         Role       @default(CASHIER)
+  isActive     Boolean    @default(true)
+  auditLogs    AuditLog[]
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
+
+model DiningTable {
+  id          String      @id @default(uuid())
+  tableNumber Int         @unique // Meja 1 s.d. 7
+  status      TableStatus @default(AVAILABLE)
+  orders      Order[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+model Category {
+  id        String     @id @default(uuid())
+  name      String // Ayam & Katsu, Pempek, Mie Kwetiau & Nasi Goreng, Minuman
+  slug      String     @unique
+  sortOrder Int        @default(0)
+  menuItems MenuItem[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+model MenuItem {
+  id               String      @id @default(uuid())
+  categoryId       String
+  category         Category    @relation(fields: [categoryId], references: [id])
+  name             String
+  description      String?
+  price            Int // Harga Nett dalam Rupiah
+  imageUrl         String // Wajib diisi (URL foto menu)
+  isAvailable      Boolean     @default(true)
+  isBestSeller     Boolean     @default(false)
+  hasSauceModifier Boolean     @default(false) // True khusus menu katsu (pilihan saus)
+  orderItems       OrderItem[]
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+}
+
+model Order {
+  id             String        @id @default(uuid())
+  orderNumber    String        @unique // Contoh: KM-001, KM-002
+  tableId        String
+  table          DiningTable   @relation(fields: [tableId], references: [id])
+  customerName   String
+  orderType      OrderType     @default(DINE_IN)
+  status         OrderStatus   @default(PENDING_PAYMENT)
+  paymentMethod  PaymentMethod
+  paymentStatus  PaymentStatus @default(PENDING)
+  subtotal       Int
+  discountAmount Int           @default(0)
+  totalAmount    Int // subtotal - discountAmount
+  qrisPayload    String? // QR string atau URL dinamis
+  qrisExpiresAt  DateTime?
+  cashCode       String? // Contoh: #KM-014
+  cashExpiresAt  DateTime?
+  voidReason     String? // Wajib diisi jika status VOID
+  items          OrderItem[]
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+}
+
+model OrderItem {
+  id          String   @id @default(uuid())
+  orderId     String
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItemId  String
+  menuItem    MenuItem @relation(fields: [menuItemId], references: [id])
+  quantity    Int      @default(1)
+  price       Int // Harga satuan saat transaksi
+  sauceOption String? // Pilihan varian saus jika hasSauceModifier true
+  notes       String? // Catatan bebas (misal: "Bawang goreng dipisah")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model AuditLog {
+  id                String   @id @default(uuid())
+  action            String // Contoh: VOID_ORDER, APPLY_DISCOUNT, UPDATE_AVAILABILITY
+  performedByUserId String?
+  performedByUser   User?    @relation(fields: [performedByUserId], references: [id])
+  details           String? // Metadata / alasan dalam bentuk string atau JSON
+  createdAt         DateTime @default(now())
+}
