@@ -1,10 +1,9 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Image from "next/image";
-import { motion, AnimatePresence } from "motion/react";
 import { MenuItemType } from "@/types";
-import { X, Sparkles, SlidersHorizontal, Plus } from "lucide-react";
+import { Heart, Info, Share2 } from "lucide-react";
 
 interface MenuDetailModalProps {
   item: MenuItemType | null;
@@ -21,7 +20,10 @@ export const MenuDetailModal: React.FC<MenuDetailModalProps> = ({
   onOpenCustomize,
   onQuickAdd,
 }) => {
-  if (!item) return null;
+  const [isSaved, setIsSaved] = useState<boolean>(false);
+  const [sharedToast, setSharedToast] = useState<boolean>(false);
+
+  if (!item || !isOpen) return null;
 
   const handleAction = () => {
     if (item.hasSauceModifier) {
@@ -33,104 +35,128 @@ export const MenuDetailModal: React.FC<MenuDetailModalProps> = ({
     }
   };
 
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: item.name,
+          text: item.description || `Pesan ${item.name} di Kantin Mini!`,
+          url: window.location.href,
+        });
+        return;
+      } catch {
+        // Fallback below
+      }
+    }
+    navigator.clipboard.writeText(window.location.href);
+    setSharedToast(true);
+    setTimeout(() => setSharedToast(false), 2000);
+  };
+
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center p-0 sm:p-4">
-          {/* Backdrop Scrim */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={onClose}
-            className="fixed inset-0 bg-ink/50 backdrop-blur-xs transition-opacity"
-          />
+    <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center p-0 sm:p-4">
+      {/* Backdrop Scrim */}
+      <div
+        onClick={onClose}
+        className="fixed inset-0 bg-black/50 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
+      />
 
-          {/* Spring Bottom Sheet (Apple-style 3/4 screen on mobile) */}
-          <motion.div
-            initial={{ y: "100%" }}
-            animate={{ y: 0 }}
-            exit={{ y: "100%" }}
-            transition={{ type: "spring", damping: 30, stiffness: 350 }}
-            className="relative w-full max-w-lg bg-surface rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden z-10 h-[75vh] sm:h-auto sm:max-h-[85vh] flex flex-col"
-          >
-            {/* Grab Handle */}
-            <div className="pt-3 pb-1 flex justify-center">
-              <div className="w-12 h-1.5 rounded-full bg-surface-muted/90" />
-            </div>
+      {/* Bottom Sheet Modal (persis referensi references/detail-menu-modal.png) */}
+      <div
+        className="relative w-full max-w-lg bg-white rounded-t-[28px] sm:rounded-3xl shadow-2xl overflow-hidden z-10 max-h-[85vh] flex flex-col animate-in slide-in-from-bottom duration-300"
+      >
+        {/* Grab Handle */}
+        <div className="pt-3 pb-2 flex justify-center shrink-0">
+          <div className="w-12 h-1 rounded-full bg-gray-300" />
+        </div>
 
-            {/* Close Button */}
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto px-5 pb-6">
+          {/* Hero Image (1:1 aspect ratio, rounded-2xl sesuai screenshot) */}
+          <div className="relative w-full aspect-square rounded-2xl overflow-hidden bg-sky-100/60 border border-sky-200/40 shrink-0">
+            <Image
+              src={item.imageUrl}
+              alt={item.name}
+              fill
+              priority
+              sizes="(max-width: 640px) 100vw, 512px"
+              className="object-cover"
+            />
+          </div>
+
+          {/* Title */}
+          <h2 className="text-xl md:text-2xl font-bold text-gray-900 tracking-tight uppercase mt-4">
+            {item.name}
+          </h2>
+
+          {/* Description */}
+          {item.description && (
+            <p className="text-sm text-gray-500 leading-relaxed mt-1.5 font-normal">
+              {item.description}
+            </p>
+          )}
+
+          {/* Price */}
+          <div className="text-lg md:text-xl font-bold text-gray-900 mt-3">
+            {item.price.toLocaleString("id-ID")}
+          </div>
+
+          {/* Action Pills: Simpan (kiri) | Report & Share (kanan) - persis detail-menu-modal.png */}
+          <div className="flex items-center justify-between mt-4 pt-1">
+            {/* Left: Simpan */}
             <button
-              onClick={onClose}
-              className="btn-press absolute top-4 right-4 z-20 w-8 h-8 rounded-full bg-surface/80 backdrop-blur-sm text-ink-muted hover:text-ink flex items-center justify-center border border-surface-border/50 shadow-xs"
-              aria-label="Tutup modal"
+              type="button"
+              onClick={() => setIsSaved(!isSaved)}
+              className={`btn-press flex items-center gap-1.5 px-4 py-1.5 rounded-full border text-xs font-semibold transition-colors ${
+                isSaved
+                  ? "bg-rose-50 border-rose-200 text-rose-600"
+                  : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
+              }`}
             >
-              <X className="w-4 h-4" />
+              <Heart
+                className={`w-3.5 h-3.5 ${
+                  isSaved ? "fill-rose-600 text-rose-600" : "text-gray-700"
+                }`}
+              />
+              <span>{isSaved ? "Tersimpan" : "Simpan"}</span>
             </button>
 
-            {/* Scrollable Content */}
-            <div className="flex-1 overflow-y-auto px-5 pb-6 space-y-4 pt-1">
-              {/* Hero Image (1:1 aspect ratio, centered, setengah tinggi modal) */}
-              <div className="relative w-48 h-48 sm:w-60 sm:h-60 aspect-square mx-auto rounded-2xl overflow-hidden bg-surface-subtle border border-surface-border/50 shrink-0 shadow-xs">
-                <Image
-                  src={item.imageUrl}
-                  alt={item.name}
-                  fill
-                  priority
-                  sizes="(max-width: 640px) 192px, 240px"
-                  className="object-cover"
-                />
-              </div>
-
-              {/* Title & Price */}
-              <div className="space-y-2">
-                <div className="flex items-start justify-between gap-3">
-                  <h2 className="text-xl md:text-2xl font-extrabold text-ink display-title leading-tight">
-                    {item.name}
-                  </h2>
-                  <span className="text-lg md:text-xl font-black text-brand shrink-0">
-                    Rp {item.price.toLocaleString("id-ID")}
-                  </span>
-                </div>
-
-                {item.isBestSeller && (
-                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-brand-light text-brand border border-brand-muted/40">
-                    <Sparkles className="w-3.5 h-3.5" />
-                    Paling Banyak Dipesan
-                  </div>
-                )}
-
-                {item.description && (
-                  <p className="text-sm md:text-base text-ink-muted leading-relaxed pt-1">
-                    {item.description}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {/* Bottom Sticky Action Button */}
-            <div className="p-4 border-t border-surface-border bg-surface">
+            {/* Right: Report & Share */}
+            <div className="flex items-center gap-2">
               <button
                 type="button"
-                onClick={handleAction}
-                className="btn-press w-full py-3.5 px-5 rounded-2xl bg-brand hover:bg-brand-hover text-white font-bold text-base flex items-center justify-center gap-2 shadow-md transition-colors"
+                onClick={() => alert("Terima kasih. Laporan Anda telah dicatat.")}
+                className="btn-press flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-gray-300 text-xs font-semibold text-gray-700 bg-white hover:bg-gray-50 transition-colors"
               >
-                {item.hasSauceModifier ? (
-                  <>
-                    <SlidersHorizontal className="w-5 h-5" />
-                    Kustomisasi Saus & Catatan
-                  </>
-                ) : (
-                  <>
-                    <Plus className="w-5 h-5" />
-                    Tambah ke Keranjang • Rp {item.price.toLocaleString("id-ID")}
-                  </>
-                )}
+                <div className="w-3.5 h-3.5 rounded-full bg-gray-700 text-white flex items-center justify-center text-[10px] font-bold">
+                  !
+                </div>
+                <span>Report</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleShare}
+                className="btn-press flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-gray-300 text-xs font-semibold text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+              >
+                <Share2 className="w-3.5 h-3.5 text-gray-700" />
+                <span>{sharedToast ? "Tersalin!" : "Share"}</span>
               </button>
             </div>
-          </motion.div>
+          </div>
+
+          {/* Bottom Action Button: Add to cart (Tombol hijau bulat penuh persis screenshot) */}
+          <div className="mt-6 pt-1">
+            <button
+              type="button"
+              onClick={handleAction}
+              className="btn-press w-full py-3.5 px-6 rounded-full bg-[#008a00] hover:bg-[#007500] text-white font-bold text-base flex items-center justify-center shadow-sm transition-colors"
+            >
+              Add to cart
+            </button>
+          </div>
         </div>
-      )}
-    </AnimatePresence>
+      </div>
+    </div>
   );
 };

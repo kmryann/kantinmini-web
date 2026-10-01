@@ -107,22 +107,24 @@ export default function CartClient() {
 
   return (
     <div className="min-h-screen bg-canvas text-ink pb-32">
-      {/* Top Header */}
-      <header className="sticky top-0 z-30 frosted-glass border-b border-surface-border">
-        <div className="max-w-xl mx-auto px-4 py-3.5 flex items-center justify-between gap-3">
+      {/* Top Header - 100% Solid Opaque White */}
+      <header className="sticky top-0 z-30 bg-white border-b border-gray-200 shadow-xs">
+        <div className="max-w-xl mx-auto px-4 h-14 flex items-center justify-between gap-3">
           <Link
             href={`/order?table=${tableNumber}`}
-            className="btn-press p-2 rounded-xl text-ink hover:bg-surface-subtle -ml-1 transition-colors flex items-center gap-1.5 text-xs font-bold"
+            className="btn-press -ml-1 px-3 py-1.5 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-800 transition-colors flex items-center gap-1.5 text-xs font-bold"
           >
-            <ArrowLeft className="w-4 h-4" />
-            <span>Kembali ke Menu</span>
+            <ArrowLeft className="w-4 h-4 text-gray-700" />
+            <span>Menu</span>
           </Link>
 
-          <h1 className="text-base font-extrabold text-ink">Keranjang Pesanan</h1>
+          <h1 className="text-base font-extrabold text-gray-900 tracking-tight">
+            Keranjang Pesanan
+          </h1>
 
-          <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-brand-light text-brand border border-brand-muted/40">
+          <div className="px-3 py-1 rounded-full text-xs font-bold bg-orange-50 text-orange-700 border border-orange-200">
             Meja {tableNumber}
-          </span>
+          </div>
         </div>
       </header>
 
@@ -379,13 +381,13 @@ export default function CartClient() {
         )}
       </main>
 
-      {/* Sticky Bottom Checkout Action */}
+      {/* Sticky Bottom Checkout Action - Solid White */}
       {cart.length > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 z-40 p-4 border-t border-surface-border frosted-glass">
+        <div className="fixed bottom-0 left-0 right-0 z-40 p-4 border-t border-gray-200 bg-white shadow-[0_-4px_16px_rgba(0,0,0,0.06)]">
           <div className="max-w-xl mx-auto flex items-center justify-between gap-4">
             <div>
-              <div className="text-xs text-ink-muted font-medium">Total Nett</div>
-              <div className="text-lg font-black text-brand">
+              <div className="text-xs text-gray-500 font-medium">Total Nett</div>
+              <div className="text-lg font-black text-gray-900">
                 Rp {subtotal.toLocaleString("id-ID")}
               </div>
             </div>
@@ -394,7 +396,7 @@ export default function CartClient() {
               type="button"
               disabled={isSubmitting}
               onClick={handleCheckout}
-              className="btn-press flex-1 py-3.5 px-5 rounded-2xl bg-brand hover:bg-brand-hover text-white font-extrabold text-sm md:text-base flex items-center justify-center gap-2 shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="btn-press flex-1 py-3.5 px-5 rounded-full bg-[#008a00] hover:bg-[#007500] text-white font-bold text-sm md:text-base flex items-center justify-center gap-2 shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSubmitting ? (
                 <>

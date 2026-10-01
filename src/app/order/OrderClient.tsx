@@ -191,8 +191,8 @@ export default function OrderClient({ initialCategories = [] }: OrderClientProps
 
   return (
     <div className="min-h-screen bg-canvas text-ink pb-28">
-      {/* Top Header & Store Banner - Solid Opaque (tidak transparan saat scroll) */}
-      <header className="sticky top-0 z-30 bg-canvas border-b border-surface-border/60">
+      {/* Top Header & Store Banner - Solid Opaque, Bersih Tanpa Garis Abu-abu */}
+      <header className="sticky top-0 z-30 bg-canvas">
         <div className="max-w-xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between gap-3 mb-2.5">
             <div className="flex items-center gap-2.5">

@@ -66,3 +66,12 @@
   letter-spacing: -0.025em;
   line-height: 1.15;
 }
+
+/* Hide scrollbar across all mobile & desktop browsers */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

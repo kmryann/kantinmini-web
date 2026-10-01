@@ -237,79 +237,80 @@ export default function StatusClient({ orderId }: StatusClientProps) {
           </p>
         </div>
 
-        {/* 3-Dot Stepper Visual */}
-        <div className="relative flex items-center justify-between px-6 py-2">
-          {/* Connector Line Background */}
-          <div className="absolute left-10 right-10 top-1/2 -translate-y-1/2 h-1 bg-surface-muted -z-0" />
-          {/* Active Connector Progress Line */}
-          <div
-            className="absolute left-10 top-1/2 -translate-y-1/2 h-1 bg-brand transition-all duration-500 -z-0"
-            style={{
-              width: isDot3Active ? "calc(100% - 80px)" : isDot2Active ? "50%" : isDot1Active ? "0%" : "0%",
-            }}
-          />
-
-          {/* Dot 1: Pesan */}
-          <div className="flex flex-col items-center gap-1.5 z-10">
+        {/* 3-Dot Stepper Visual - Rapi & Presisi */}
+        <div className="px-4 py-3">
+          {/* Circles and connector lines row */}
+          <div className="flex items-center justify-between">
+            {/* Dot 1 */}
             <div
-              className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs border-2 transition-all ${
+              className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs shrink-0 transition-all ${
                 isDot1Active
-                  ? "bg-brand border-brand text-white shadow-xs"
-                  : "bg-surface border-surface-border text-ink-faint"
+                  ? "bg-brand text-white shadow-xs"
+                  : "bg-surface-subtle border border-surface-border text-ink-faint"
               }`}
             >
               {isDot1Active ? <Check className="w-4 h-4 stroke-[3]" /> : "1"}
             </div>
+
+            {/* Connector Line 1 -> 2 */}
+            <div className="flex-1 h-1 mx-2 bg-surface-muted rounded-full overflow-hidden">
+              <div
+                className={`h-full bg-brand transition-all duration-500 ${
+                  isDot2Active ? "w-full" : "w-0"
+                }`}
+              />
+            </div>
+
+            {/* Dot 2 */}
+            <div
+              className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs shrink-0 transition-all ${
+                isDot2Active
+                  ? "bg-brand text-white shadow-xs"
+                  : "bg-surface-subtle border border-surface-border text-ink-faint"
+              }`}
+            >
+              {isDot2Active ? <CookingPot className="w-4 h-4" /> : "2"}
+            </div>
+
+            {/* Connector Line 2 -> 3 */}
+            <div className="flex-1 h-1 mx-2 bg-surface-muted rounded-full overflow-hidden">
+              <div
+                className={`h-full bg-emerald-600 transition-all duration-500 ${
+                  isDot3Active ? "w-full" : "w-0"
+                }`}
+              />
+            </div>
+
+            {/* Dot 3 */}
+            <div
+              className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs shrink-0 transition-all ${
+                isDot3Active
+                  ? "bg-emerald-600 text-white shadow-xs"
+                  : "bg-surface-subtle border border-surface-border text-ink-faint"
+              }`}
+            >
+              {isDot3Active ? <Utensils className="w-4 h-4" /> : "3"}
+            </div>
+          </div>
+
+          {/* Labels row */}
+          <div className="flex justify-between items-center mt-2.5">
             <span
-              className={`text-[11px] font-extrabold ${
+              className={`text-[11px] font-extrabold w-12 text-center transition-colors ${
                 isDot1Active ? "text-brand" : "text-ink-muted"
               }`}
             >
               Pesan
             </span>
-          </div>
-
-          {/* Dot 2: Proses */}
-          <div className="flex flex-col items-center gap-1.5 z-10">
-            <div
-              className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs border-2 transition-all ${
-                isDot2Active
-                  ? "bg-brand border-brand text-white shadow-xs"
-                  : "bg-surface border-surface-border text-ink-faint"
-              }`}
-            >
-              {isDot2Active ? (
-                <CookingPot className="w-4 h-4" />
-              ) : (
-                "2"
-              )}
-            </div>
             <span
-              className={`text-[11px] font-extrabold ${
+              className={`text-[11px] font-extrabold w-12 text-center transition-colors ${
                 isDot2Active ? "text-brand" : "text-ink-muted"
               }`}
             >
               Proses
             </span>
-          </div>
-
-          {/* Dot 3: Dihidangkan */}
-          <div className="flex flex-col items-center gap-1.5 z-10">
-            <div
-              className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs border-2 transition-all ${
-                isDot3Active
-                  ? "bg-emerald-600 border-emerald-600 text-white shadow-xs"
-                  : "bg-surface border-surface-border text-ink-faint"
-              }`}
-            >
-              {isDot3Active ? (
-                <Utensils className="w-4 h-4" />
-              ) : (
-                "3"
-              )}
-            </div>
             <span
-              className={`text-[11px] font-extrabold ${
+              className={`text-[11px] font-extrabold w-16 text-center transition-colors ${
                 isDot3Active ? "text-emerald-700" : "text-ink-muted"
               }`}
             >
