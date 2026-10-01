@@ -1,4 +1,4 @@
-import { PrismaClient, Role, TableStatus } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -13,7 +13,7 @@ async function main() {
       update: {},
       create: {
         tableNumber: i,
-        status: TableStatus.AVAILABLE,
+        status: "AVAILABLE",
       },
     });
   }
@@ -28,7 +28,7 @@ async function main() {
       email: "admin@kantinmini.com",
       username: "admin",
       passwordHash: "admin123", // In production should be bcrypt hash
-      role: Role.ADMIN,
+      role: "ADMIN",
     },
   });
 
@@ -41,7 +41,7 @@ async function main() {
       username: "manager",
       passwordHash: "manager123",
       pinHash: "8888", // Supervisor Override PIN
-      role: Role.MANAGER,
+      role: "MANAGER",
     },
   });
 
@@ -52,7 +52,7 @@ async function main() {
       name: "Kasir Operasional",
       username: "kasir1",
       pinHash: "1234", // Fast Cashier PIN
-      role: Role.CASHIER,
+      role: "CASHIER",
     },
   });
 
