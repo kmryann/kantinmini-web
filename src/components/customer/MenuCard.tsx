@@ -20,7 +20,7 @@ export const MenuCard: React.FC<MenuCardProps> = ({
 }) => {
   const isAvailable = item.isAvailable;
 
-  const handleAddClick = (e: React.MouseEvent) => {
+  const handleAddClick = (e: React.MouseEvent | React.TouchEvent) => {
     e.stopPropagation();
     if (!isAvailable) return;
 
@@ -33,15 +33,19 @@ export const MenuCard: React.FC<MenuCardProps> = ({
 
   return (
     <div
-      onClick={() => isAvailable && onOpenDetail(item)}
-      className={`group relative flex items-start justify-between gap-4 p-4 rounded-2xl bg-surface border border-surface-border/80 transition-all cursor-pointer ${
+      className={`group relative flex items-start justify-between gap-4 p-4 rounded-2xl bg-surface border border-surface-border/80 transition-all ${
         isAvailable
-          ? "hover:border-brand-muted/70 hover:shadow-xs active:scale-[0.99]"
-          : "opacity-60 bg-surface-subtle cursor-not-allowed"
+          ? "hover:border-brand-muted/70 hover:shadow-xs"
+          : "opacity-60 bg-surface-subtle"
       }`}
     >
-      {/* Sisi Kiri: Info Menu */}
-      <div className="flex-1 min-w-0 pr-1 flex flex-col justify-between self-stretch">
+      {/* Sisi Kiri: Info Menu (Klik teks untuk buka Detail) */}
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={() => isAvailable && onOpenDetail(item)}
+        className="flex-1 min-w-0 pr-1 flex flex-col justify-between self-stretch cursor-pointer select-none"
+      >
         <div>
           <div className="flex items-center gap-1.5 flex-wrap mb-1">
             <h3 className="font-bold text-ink text-base md:text-lg leading-snug tracking-tight">
@@ -71,7 +75,13 @@ export const MenuCard: React.FC<MenuCardProps> = ({
 
       {/* Sisi Kanan: Foto Menu + Tombol Add */}
       <div className="flex flex-col items-center shrink-0 w-28 md:w-32">
-        <div className="relative w-28 h-28 md:w-32 md:h-32 rounded-2xl overflow-hidden bg-surface-subtle border border-surface-border/50">
+        {/* Foto (Klik foto untuk buka Detail) */}
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={() => isAvailable && onOpenDetail(item)}
+          className="relative w-28 h-28 md:w-32 md:h-32 rounded-2xl overflow-hidden bg-surface-subtle border border-surface-border/50 cursor-pointer select-none"
+        >
           <Image
             src={item.imageUrl}
             alt={item.name}
@@ -90,7 +100,7 @@ export const MenuCard: React.FC<MenuCardProps> = ({
           )}
         </div>
 
-        {/* Tombol Add (di bawah gambar, persis seperti referensi list-menu.png) */}
+        {/* Tombol Add Mandiri */}
         <div className="mt-2 w-full flex flex-col items-center">
           <button
             type="button"

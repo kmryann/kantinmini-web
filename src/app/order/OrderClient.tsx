@@ -86,32 +86,37 @@ export default function OrderClient({ initialCategories = [] }: OrderClientProps
     loadMenu();
   }, [initialCategories]);
 
-  // Scrollspy observer for sticky category pills
+  // Scrollspy observer for sticky category pills (dengan fallback aman untuk browser mobile)
   useEffect(() => {
     if (categories.length === 0 || searchQuery.trim()) return;
+    if (typeof window === "undefined" || !("IntersectionObserver" in window)) return;
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (entry.isIntersecting) {
-            const slug = entry.target.getAttribute("data-category-slug");
-            if (slug) {
-              setActiveCategorySlug(slug);
+    try {
+      const observer = new IntersectionObserver(
+        (entries) => {
+          for (const entry of entries) {
+            if (entry.isIntersecting) {
+              const slug = entry.target.getAttribute("data-category-slug");
+              if (slug) {
+                setActiveCategorySlug(slug);
+              }
             }
           }
+        },
+        {
+          rootMargin: "0px 0px -40% 0px",
+          threshold: 0,
         }
-      },
-      {
-        rootMargin: "-20% 0px -70% 0px",
-        threshold: 0,
-      }
-    );
+      );
 
-    categoryRefs.current.forEach((el) => {
-      if (el) observer.observe(el);
-    });
+      categoryRefs.current.forEach((el) => {
+        if (el) observer.observe(el);
+      });
 
-    return () => observer.disconnect();
+      return () => observer.disconnect();
+    } catch (e) {
+      console.warn("IntersectionObserver not supported:", e);
+    }
   }, [categories, searchQuery]);
 
   const scrollToCategory = (slug: string) => {
@@ -187,7 +192,7 @@ export default function OrderClient({ initialCategories = [] }: OrderClientProps
   return (
     <div className="min-h-screen bg-canvas text-ink pb-28">
       {/* Top Header & Store Banner - Solid Opaque (tidak transparan saat scroll) */}
-      <header className="sticky top-0 z-30 bg-canvas border-b border-surface-border shadow-xs">
+      <header className="sticky top-0 z-30 bg-canvas border-b border-surface-border/60">
         <div className="max-w-xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between gap-3 mb-2.5">
             <div className="flex items-center gap-2.5">
@@ -241,7 +246,7 @@ export default function OrderClient({ initialCategories = [] }: OrderClientProps
 
         {/* Sticky Horizontal Category Tabs with Underline */}
         {!searchQuery && (
-          <div className="max-w-xl mx-auto px-4 overflow-x-auto no-scrollbar flex items-center gap-1 border-t border-surface-border/40">
+          <div className="max-w-xl mx-auto px-4 overflow-x-auto no-scrollbar flex items-center gap-1 pt-1 pb-1">
             {categories.map((cat) => {
               const isActive = activeCategorySlug === cat.slug;
               return (
@@ -249,7 +254,7 @@ export default function OrderClient({ initialCategories = [] }: OrderClientProps
                   key={cat.id}
                   type="button"
                   onClick={() => scrollToCategory(cat.slug)}
-                  className={`btn-press relative whitespace-nowrap pt-3 pb-2.5 px-3 text-xs md:text-sm font-bold transition-colors shrink-0 ${
+                  className={`btn-press relative whitespace-nowrap pt-2.5 pb-2 px-3 text-xs md:text-sm font-bold transition-colors shrink-0 ${
                     isActive
                       ? "text-brand font-extrabold"
                       : "text-ink-muted hover:text-ink"
