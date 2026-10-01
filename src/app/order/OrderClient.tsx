@@ -8,7 +8,6 @@ import { MenuCard } from "@/components/customer/MenuCard";
 import { MenuDetailModal } from "@/components/customer/MenuDetailModal";
 import { CustomizeModal } from "@/components/customer/CustomizeModal";
 import { FloatingCartBar } from "@/components/customer/FloatingCartBar";
-import { CartDrawer } from "@/components/customer/CartDrawer";
 import {
   Utensils,
   Search,
@@ -21,8 +20,7 @@ import {
 
 export default function OrderClient() {
   const searchParams = useSearchParams();
-  const { setTableNumber, tableNumber, addToCart, setIsCartDrawerOpen } =
-    useCart();
+  const { setTableNumber, tableNumber, addToCart } = useCart();
 
   const [categories, setCategories] = useState<CategoryWithItems[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -232,9 +230,9 @@ export default function OrderClient() {
           </div>
         </div>
 
-        {/* Sticky Horizontal Category Pills */}
+        {/* Sticky Horizontal Category Tabs with Underline */}
         {!searchQuery && (
-          <div className="max-w-xl mx-auto px-4 pb-2.5 overflow-x-auto no-scrollbar flex items-center gap-2">
+          <div className="max-w-xl mx-auto px-4 overflow-x-auto no-scrollbar flex items-center gap-1 border-t border-surface-border/40">
             {categories.map((cat) => {
               const isActive = activeCategorySlug === cat.slug;
               return (
@@ -242,13 +240,16 @@ export default function OrderClient() {
                   key={cat.id}
                   type="button"
                   onClick={() => scrollToCategory(cat.slug)}
-                  className={`btn-press whitespace-nowrap px-3.5 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 ${
+                  className={`btn-press relative whitespace-nowrap pt-3 pb-2.5 px-3 text-xs md:text-sm font-bold transition-colors shrink-0 ${
                     isActive
-                      ? "bg-brand text-white shadow-xs"
-                      : "bg-surface text-ink-muted border border-surface-border hover:text-ink"
+                      ? "text-brand font-extrabold"
+                      : "text-ink-muted hover:text-ink"
                   }`}
                 >
                   {cat.name}
+                  {isActive && (
+                    <span className="absolute bottom-0 left-2 right-2 h-0.5 bg-brand rounded-full" />
+                  )}
                 </button>
               );
             })}
@@ -311,9 +312,6 @@ export default function OrderClient() {
         onClose={() => setSelectedCustomizeItem(null)}
         onAddToCart={handleCustomAddToCart}
       />
-
-      {/* Cart Drawer */}
-      <CartDrawer />
 
       {/* Table Switcher Dialog */}
       {isTableModalOpen && (

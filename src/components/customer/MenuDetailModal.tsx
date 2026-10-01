@@ -46,13 +46,13 @@ export const MenuDetailModal: React.FC<MenuDetailModalProps> = ({
             className="fixed inset-0 bg-ink/50 backdrop-blur-xs transition-opacity"
           />
 
-          {/* Spring Bottom Sheet (Apple-style) */}
+          {/* Spring Bottom Sheet (Apple-style 3/4 screen on mobile) */}
           <motion.div
             initial={{ y: "100%" }}
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
             transition={{ type: "spring", damping: 30, stiffness: 350 }}
-            className="relative w-full max-w-lg bg-surface rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden z-10 max-h-[90vh] flex flex-col"
+            className="relative w-full max-w-lg bg-surface rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden z-10 h-[75vh] sm:h-auto sm:max-h-[85vh] flex flex-col"
           >
             {/* Grab Handle */}
             <div className="pt-3 pb-1 flex justify-center">
@@ -69,9 +69,9 @@ export const MenuDetailModal: React.FC<MenuDetailModalProps> = ({
             </button>
 
             {/* Scrollable Content */}
-            <div className="overflow-y-auto px-5 pb-6 space-y-4 pt-1">
+            <div className="flex-1 overflow-y-auto px-5 pb-6 space-y-4 pt-1">
               {/* Hero Image */}
-              <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden bg-surface-subtle border border-surface-border/40">
+              <div className="relative w-full aspect-video sm:aspect-[4/3] rounded-2xl overflow-hidden bg-surface-subtle border border-surface-border/40 shrink-0">
                 <Image
                   src={item.imageUrl}
                   alt={item.name}

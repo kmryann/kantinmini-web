@@ -1,12 +1,13 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
 import { useCart } from "@/context/CartContext";
 import { ShoppingBag, ArrowRight } from "lucide-react";
 
 export const FloatingCartBar: React.FC = () => {
-  const { totalItems, subtotal, setIsCartDrawerOpen } = useCart();
+  const { totalItems, subtotal, tableNumber } = useCart();
 
   if (totalItems === 0) return null;
 
@@ -20,10 +21,9 @@ export const FloatingCartBar: React.FC = () => {
           transition={{ type: "spring", damping: 25, stiffness: 300 }}
           className="pointer-events-auto"
         >
-          <button
-            type="button"
-            onClick={() => setIsCartDrawerOpen(true)}
-            className="btn-press w-full p-3.5 rounded-2xl frosted-glass border border-brand/40 shadow-xl flex items-center justify-between gap-3 text-ink bg-surface/90 hover:bg-surface transition-all"
+          <Link
+            href={`/order/cart?table=${tableNumber}`}
+            className="btn-press w-full p-3.5 rounded-2xl frosted-glass border border-brand/40 shadow-xl flex items-center justify-between gap-3 text-ink bg-surface/95 hover:bg-surface transition-all block"
           >
             <div className="flex items-center gap-3">
               <div className="relative w-10 h-10 rounded-xl bg-brand text-white flex items-center justify-center shadow-xs">
@@ -40,11 +40,11 @@ export const FloatingCartBar: React.FC = () => {
               </div>
             </div>
 
-            <div className="flex items-center gap-1 text-sm font-bold text-ink px-3 py-1.5 rounded-xl bg-brand-light text-brand">
-              Checkout
+            <div className="flex items-center gap-1.5 text-xs md:text-sm font-bold px-3.5 py-2 rounded-xl bg-brand text-white shadow-xs">
+              Lihat Keranjang
               <ArrowRight className="w-4 h-4" />
             </div>
-          </button>
+          </Link>
         </motion.div>
       </div>
     </AnimatePresence>
