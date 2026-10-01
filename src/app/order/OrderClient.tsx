@@ -84,7 +84,7 @@ export default function OrderClient({ initialCategories = [] }: OrderClientProps
       }
     }
     loadMenu();
-  }, [initialCategories]);
+  }, []);
 
   // Scrollspy observer for sticky category pills (dengan fallback aman untuk browser mobile)
   useEffect(() => {
