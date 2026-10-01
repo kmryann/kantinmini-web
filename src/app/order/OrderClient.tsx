@@ -18,16 +18,23 @@ import {
   AlertCircle,
 } from "lucide-react";
 
-export default function OrderClient() {
+interface OrderClientProps {
+  initialCategories?: CategoryWithItems[];
+}
+
+export default function OrderClient({ initialCategories = [] }: OrderClientProps) {
   const searchParams = useSearchParams();
   const { setTableNumber, tableNumber, addToCart } = useCart();
 
-  const [categories, setCategories] = useState<CategoryWithItems[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [categories, setCategories] =
+    useState<CategoryWithItems[]>(initialCategories);
+  const [isLoading, setIsLoading] = useState<boolean>(initialCategories.length === 0);
   const [error, setError] = useState<string | null>(null);
 
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [activeCategorySlug, setActiveCategorySlug] = useState<string>("");
+  const [activeCategorySlug, setActiveCategorySlug] = useState<string>(
+    initialCategories.length > 0 ? initialCategories[0].slug : ""
+  );
 
   // Modals state
   const [selectedDetailItem, setSelectedDetailItem] =
@@ -51,8 +58,10 @@ export default function OrderClient() {
     }
   }, [searchParams, setTableNumber]);
 
-  // Fetch Menu from API
+  // Fetch Menu from API (hanya jika belum terisi via SSR)
   useEffect(() => {
+    if (initialCategories.length > 0) return;
+
     async function loadMenu() {
       try {
         setIsLoading(true);
@@ -75,7 +84,7 @@ export default function OrderClient() {
       }
     }
     loadMenu();
-  }, []);
+  }, [initialCategories]);
 
   // Scrollspy observer for sticky category pills
   useEffect(() => {
@@ -177,8 +186,8 @@ export default function OrderClient() {
 
   return (
     <div className="min-h-screen bg-canvas text-ink pb-28">
-      {/* Top Header & Store Banner (matching list-menu.png) */}
-      <header className="sticky top-0 z-30 frosted-glass border-b border-surface-border/60">
+      {/* Top Header & Store Banner - Solid Opaque (tidak transparan saat scroll) */}
+      <header className="sticky top-0 z-30 bg-canvas border-b border-surface-border shadow-xs">
         <div className="max-w-xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between gap-3 mb-2.5">
             <div className="flex items-center gap-2.5">

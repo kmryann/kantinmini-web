@@ -70,14 +70,14 @@ export const MenuDetailModal: React.FC<MenuDetailModalProps> = ({
 
             {/* Scrollable Content */}
             <div className="flex-1 overflow-y-auto px-5 pb-6 space-y-4 pt-1">
-              {/* Hero Image */}
-              <div className="relative w-full aspect-video sm:aspect-[4/3] rounded-2xl overflow-hidden bg-surface-subtle border border-surface-border/40 shrink-0">
+              {/* Hero Image (1:1 aspect ratio, centered, setengah tinggi modal) */}
+              <div className="relative w-48 h-48 sm:w-60 sm:h-60 aspect-square mx-auto rounded-2xl overflow-hidden bg-surface-subtle border border-surface-border/50 shrink-0 shadow-xs">
                 <Image
                   src={item.imageUrl}
                   alt={item.name}
                   fill
                   priority
-                  sizes="(max-width: 640px) 100vw, 512px"
+                  sizes="(max-width: 640px) 192px, 240px"
                   className="object-cover"
                 />
               </div>
