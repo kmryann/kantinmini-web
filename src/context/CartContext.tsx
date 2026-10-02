@@ -25,6 +25,7 @@ interface CartContextType {
     notes?: string
   ) => void;
   updateQuantity: (cartItemId: string, delta: number) => void;
+  updateNotes: (cartItemId: string, notes: string) => void;
   removeItem: (cartItemId: string) => void;
   clearCart: () => void;
   isCartDrawerOpen: boolean;
@@ -34,34 +35,29 @@ interface CartContextType {
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
-  const [cart, setCart] = useState<CartItemType[]>([]);
-  const [customerName, setCustomerName] = useState<string>("");
+  const [cart, setCart] = useState<CartItemType[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const savedCart = localStorage.getItem("kantinmini_cart");
+      return savedCart ? JSON.parse(savedCart) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [customerName, setCustomerName] = useState<string>(() => {
+    if (typeof window === "undefined") return "";
+    try {
+      return localStorage.getItem("kantinmini_customer_name") || "";
+    } catch {
+      return "";
+    }
+  });
   const [orderType, setOrderType] = useState<OrderTypeChoice>("DINE_IN");
   const [tableNumber, setTableNumber] = useState<number>(1);
   const [isCartDrawerOpen, setIsCartDrawerOpen] = useState<boolean>(false);
-  const [isLoaded, setIsLoaded] = useState<boolean>(false);
-
-  // Load from localStorage on mount
-  useEffect(() => {
-    try {
-      const savedCart = localStorage.getItem("kantinmini_cart");
-      if (savedCart) {
-        setCart(JSON.parse(savedCart));
-      }
-      const savedName = localStorage.getItem("kantinmini_customer_name");
-      if (savedName) {
-        setCustomerName(savedName);
-      }
-    } catch {
-      // ignore
-    } finally {
-      setIsLoaded(true);
-    }
-  }, []);
 
   // Sync to localStorage
   useEffect(() => {
-    if (!isLoaded) return;
     try {
       localStorage.setItem("kantinmini_cart", JSON.stringify(cart));
       if (customerName) {
@@ -70,7 +66,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     } catch {
       // ignore
     }
-  }, [cart, customerName, isLoaded]);
+  }, [cart, customerName]);
 
   const addToCart = (
     item: { id: string; name: string; price: number; imageUrl: string },
@@ -126,6 +122,17 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
+  const updateNotes = (cartItemId: string, notes: string) => {
+    setCart((prevCart) => {
+      return prevCart.map((item) => {
+        if (item.cartItemId === cartItemId) {
+          return { ...item, notes: notes.trim() };
+        }
+        return item;
+      });
+    });
+  };
+
   const removeItem = (cartItemId: string) => {
     setCart((prevCart) => prevCart.filter((ci) => ci.cartItemId !== cartItemId));
   };
@@ -159,6 +166,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         setTableNumber,
         addToCart,
         updateQuantity,
+        updateNotes,
         removeItem,
         clearCart,
         isCartDrawerOpen,

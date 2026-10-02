@@ -50,7 +50,10 @@ model MenuItem {
   imageUrl         String      // Wajib diisi (URL foto menu)
   isAvailable      Boolean     @default(true)
   isBestSeller     Boolean     @default(false)
-  hasSauceModifier Boolean     @default(false) // True khusus menu katsu (pilihan saus)
+  hasSauceModifier Boolean     @default(false) // True jika memiliki modifier varian
+  modifierName     String?     // Nama modifier, contoh: "Pilihan Saus", "Tingkat Kepedasan"
+  modifierOptions  String?     // JSON array opsi, contoh: ["Saus BBQ", "Saus Teriyaki"]
+  sortOrder        Int         @default(0)
   orderItems       OrderItem[]
   createdAt        DateTime    @default(now())
   updatedAt        DateTime    @updatedAt

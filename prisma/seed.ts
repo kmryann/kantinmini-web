@@ -51,6 +51,7 @@ async function main() {
     create: {
       name: "Kasir Operasional",
       username: "kasir1",
+      passwordHash: "kasir123",
       pinHash: "1234", // Fast Cashier PIN
       role: "CASHIER",
     },

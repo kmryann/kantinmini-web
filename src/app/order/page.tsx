@@ -16,7 +16,7 @@ export default async function OrderPage() {
       orderBy: { sortOrder: "asc" },
       include: {
         menuItems: {
-          orderBy: { createdAt: "asc" },
+          orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
         },
       },
     });
@@ -36,6 +36,8 @@ export default async function OrderPage() {
         isAvailable: m.isAvailable,
         isBestSeller: m.isBestSeller,
         hasSauceModifier: m.hasSauceModifier,
+        modifierName: m.modifierName,
+        modifierOptions: m.modifierOptions,
       })),
     }));
   } catch (err) {

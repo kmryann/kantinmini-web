@@ -7,7 +7,7 @@ export async function GET() {
       orderBy: { sortOrder: "asc" },
       include: {
         menuItems: {
-          orderBy: { createdAt: "asc" },
+          orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
         },
       },
     });

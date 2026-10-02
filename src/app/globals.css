@@ -7,18 +7,18 @@
   --color-surface-muted: #EAE4D9;
   --color-surface-border: #E5DFD3;
 
-  --color-brand: #D9532F;
-  --color-brand-hover: #C24322;
-  --color-brand-light: #FDF2EE;
-  --color-brand-muted: #F3C7B9;
+  --color-brand: #119977;
+  --color-brand-hover: #0E8064;
+  --color-brand-light: #E7F6F2;
+  --color-brand-muted: #99DAC9;
 
   --color-ink: #1F1D1A;
   --color-ink-secondary: #4A463F;
   --color-ink-muted: #736D64;
   --color-ink-faint: #A39D93;
 
-  --color-status-success: #2B8248;
-  --color-status-success-bg: #EDF7F0;
+  --color-status-success: #119977;
+  --color-status-success-bg: #E7F6F2;
   --color-status-warning: #C27803;
   --color-status-warning-bg: #FEF7EC;
   --color-status-danger: #C53030;
@@ -26,7 +26,7 @@
   --color-status-info: #1D6FB8;
   --color-status-info-bg: #EEF6FC;
 
-  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-sans: var(--font-plus-jakarta), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
 :root {
@@ -35,6 +35,7 @@
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  scrollbar-gutter: stable;
 }
 
 /* Apple-style Fluid Press Feedback */

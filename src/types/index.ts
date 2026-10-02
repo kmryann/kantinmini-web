@@ -8,6 +8,8 @@ export interface MenuItemType {
   isAvailable: boolean;
   isBestSeller: boolean;
   hasSauceModifier: boolean;
+  modifierName?: string | null;
+  modifierOptions?: string | null;
   category?: {
     id: string;
     name: string;
