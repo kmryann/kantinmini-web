@@ -44,3 +44,9 @@ dist/
 .env
 *.db
 *.db-journal
+
+# Documentation & AI Agent Configs
+PRD.md
+CLAUDE.md
+AGENTS.md
+.agents/
