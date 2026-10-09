@@ -22,10 +22,20 @@ import {
   X,
 } from "lucide-react";
 import { PaymentMethodChoice, CartItemType } from "@/types";
+import { createWhatsAppOrderLink } from "@/lib/whatsapp";
 
 const emptySubscribe = () => () => {};
 
-export default function CartClient() {
+interface CartClientProps {
+  storeSetting?: {
+    orderMode: "DIRECT" | "WHATSAPP";
+    whatsappNumber: string;
+  };
+}
+
+export default function CartClient({
+  storeSetting = { orderMode: "WHATSAPP", whatsappNumber: "085117698117" },
+}: CartClientProps) {
   const isHydrated = useSyncExternalStore(
     emptySubscribe,
     () => true,
@@ -50,13 +60,21 @@ export default function CartClient() {
     clearCart,
   } = useCart();
 
+  const [currentSetting, setCurrentSetting] = useState(storeSetting);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethodChoice>("QRIS");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [isNavigating, setIsNavigating] = useState<boolean>(false);
   const [editingNotesItem, setEditingNotesItem] = useState<CartItemType | null>(null);
   const [tempNotes, setTempNotes] = useState<string>("");
   const [hasAttemptedCheckout, setHasAttemptedCheckout] = useState<boolean>(false);
   const nameInputRef = useRef<HTMLInputElement>(null);
+
+  // Snapshot keranjang agar saat checkout dan proses pengalihan, tampilan tidak pernah berkedip kosong
+  const [cartSnapshot, setCartSnapshot] = useState<CartItemType[] | null>(null);
+  const displayedCart = cartSnapshot && cartSnapshot.length > 0 ? cartSnapshot : cart;
+  const displayedTotalItems = displayedCart.reduce((sum, item) => sum + item.quantity, 0);
+  const displayedSubtotal = displayedCart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
   // Sync table from query param if available
   useEffect(() => {
@@ -100,11 +118,41 @@ export default function CartClient() {
       return;
     }
 
+    // Jika mode WHATSAPP, langsung arahkan ke WhatsApp
+    if (currentSetting.orderMode === "WHATSAPP") {
+      setIsSubmitting(true);
+      setErrorMessage(null);
+
+      const waUrl = createWhatsAppOrderLink(currentSetting.whatsappNumber, {
+        customerName: customerName.trim(),
+        orderType,
+        tableNumber: null,
+        cart,
+        subtotal: displayedSubtotal,
+        orderMode: "WHATSAPP",
+      });
+
+      // Buka tab WhatsApp
+      window.open(waUrl, "_blank");
+
+      // Bersihkan keranjang belanja
+      try {
+        localStorage.removeItem("kantinmini_cart");
+      } catch {
+        // ignore
+      }
+      clearCart();
+      setIsSubmitting(false);
+      return;
+    }
+
     if (!paymentMethod) {
       setErrorMessage("Silakan pilih metode pembayaran.");
       return;
     }
 
+    // Simpan snapshot keranjang saat ini agar tampilan tetap utuh selama transisi
+    setCartSnapshot([...cart]);
     setErrorMessage(null);
     setIsSubmitting(true);
 
@@ -132,15 +180,25 @@ export default function CartClient() {
         throw new Error(result.error || "Gagal memproses pesanan.");
       }
 
-      // Clear local cart and navigate to order tracking page
-      clearCart();
-      router.push(`/order/status/${result.data.id}`);
+      // Aktifkan overlay transisi
+      setIsNavigating(true);
+
+      // Bersihkan localStorage agar pesanan berikutnya bersih
+      try {
+        localStorage.removeItem("kantinmini_cart");
+      } catch {
+        // ignore
+      }
+
+      // Langsung ganti halaman ke status pesanan secara instan
+      window.location.replace(`/order/status/${result.data.id}`);
     } catch (err: unknown) {
+      setIsNavigating(false);
+      setIsSubmitting(false);
+      setCartSnapshot(null);
       const message =
         err instanceof Error ? err.message : "Terjadi kesalahan koneksi.";
       setErrorMessage(message);
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -208,12 +266,18 @@ export default function CartClient() {
             </h1>
           </div>
 
-          {/* Table Number Badge - Gaya Minimalis Ikonik */}
-          <div className="inline-flex items-center gap-1.5 py-1 px-2.5 rounded-lg text-white shrink-0">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-pulse" />
-            <span className="text-xs font-medium text-emerald-100/90">Meja</span>
-            <span className="text-sm font-extrabold text-white tracking-tight">{tableNumber}</span>
-          </div>
+          {/* Table Number Badge - Hanya jika mode DIRECT */}
+          {currentSetting.orderMode === "DIRECT" ? (
+            <div className="inline-flex items-center gap-1.5 py-1 px-2.5 rounded-lg text-white shrink-0">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-pulse" />
+              <span className="text-xs font-medium text-emerald-100/90">Meja</span>
+              <span className="text-sm font-extrabold text-white tracking-tight">{tableNumber}</span>
+            </div>
+          ) : (
+            <div className="inline-flex items-center gap-1.5 py-1 px-2.5 rounded-lg bg-white/15 text-white text-xs font-bold tracking-wide">
+              <span>WhatsApp Order</span>
+            </div>
+          )}
         </div>
       </header>
 
@@ -238,7 +302,7 @@ export default function CartClient() {
         )}
 
         {/* Empty State */}
-        {cart.length === 0 ? (
+        {displayedCart.length === 0 && !isNavigating ? (
           <div className="py-20 text-center space-y-4">
             <div className="w-16 h-16 rounded-2xl bg-surface-subtle text-ink-muted flex items-center justify-center mx-auto border border-surface-border">
               <ShoppingBag className="w-8 h-8 text-ink-faint" />
@@ -262,12 +326,12 @@ export default function CartClient() {
             <div className="bg-surface rounded-2xl p-4 md:p-5 border border-surface-border shadow-xs space-y-4">
               <div className="pb-3 border-b border-surface-border">
                 <h2 className="text-xs font-extrabold uppercase tracking-wider text-ink-muted">
-                  Daftar Menu ({totalItems})
+                  Daftar Menu ({displayedTotalItems})
                 </h2>
               </div>
 
               <div className="divide-y divide-surface-border/60">
-                {cart.map((item) => (
+                {displayedCart.map((item) => (
                   <div
                     key={item.cartItemId}
                     className="py-4 first:pt-0 last:pb-0 space-y-3"
@@ -452,62 +516,77 @@ export default function CartClient() {
               </div>
             </div>
 
-            {/* Pilihan Metode Pembayaran */}
-            <div className="bg-surface rounded-2xl p-4 md:p-5 border border-surface-border shadow-xs space-y-3.5">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xs font-extrabold uppercase tracking-wider text-ink-muted">
-                  Metode Pembayaran
-                </h2>
-                
-              </div>
+            {/* Pilihan Metode Pembayaran - Hanya tampil jika mode DIRECT */}
+            {currentSetting.orderMode === "DIRECT" ? (
+              <div className="bg-surface rounded-2xl p-4 md:p-5 border border-surface-border shadow-xs space-y-3.5">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xs font-extrabold uppercase tracking-wider text-ink-muted">
+                    Metode Pembayaran
+                  </h2>
+                </div>
 
-              <div className="grid grid-cols-2 gap-2.5">
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod("QRIS")}
-                  className={`btn-press p-3.5 md:p-4 rounded-xl border flex flex-col items-center justify-center gap-1.5 text-center transition-all ${
-                    paymentMethod === "QRIS"
-                      ? "border-brand bg-brand/10 text-brand shadow-xs ring-1 ring-brand/30"
-                      : "border-surface-border bg-white text-ink-muted hover:text-ink hover:bg-surface-subtle"
-                  }`}
-                >
-                  <QrCode className="w-5 h-5 text-brand" />
-                  <span className="text-xs md:text-sm font-bold text-ink">QRIS Dinamis</span>
-                  <span className="text-[10px] md:text-[11px] text-ink-muted font-normal">
-                    Verifikasi Otomatis
-                  </span>
-                </button>
+                <div className="grid grid-cols-2 gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod("QRIS")}
+                    className={`btn-press p-3.5 md:p-4 rounded-xl border flex flex-col items-center justify-center gap-1.5 text-center transition-all ${
+                      paymentMethod === "QRIS"
+                        ? "border-brand bg-brand/10 text-brand shadow-xs ring-1 ring-brand/30"
+                        : "border-surface-border bg-white text-ink-muted hover:text-ink hover:bg-surface-subtle"
+                    }`}
+                  >
+                    <QrCode className="w-5 h-5 text-brand" />
+                    <span className="text-xs md:text-sm font-bold text-ink">QRIS Dinamis</span>
+                    <span className="text-[10px] md:text-[11px] text-ink-muted font-normal">
+                      Verifikasi Otomatis
+                    </span>
+                  </button>
 
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod("CASH")}
-                  className={`btn-press p-3.5 md:p-4 rounded-xl border flex flex-col items-center justify-center gap-1.5 text-center transition-all ${
-                    paymentMethod === "CASH"
-                      ? "border-brand bg-brand/10 text-brand shadow-xs ring-1 ring-brand/30"
-                      : "border-surface-border bg-white text-ink-muted hover:text-ink hover:bg-surface-subtle"
-                  }`}
-                >
-                  <Banknote className="w-5 h-5 text-brand" />
-                  <span className="text-xs md:text-sm font-bold text-ink">Tunai / Cash</span>
-                  <span className="text-[10px] md:text-[11px] text-ink-muted font-normal">
-                    Bayar di Kasir
-                  </span>
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod("CASH")}
+                    className={`btn-press p-3.5 md:p-4 rounded-xl border flex flex-col items-center justify-center gap-1.5 text-center transition-all ${
+                      paymentMethod === "CASH"
+                        ? "border-brand bg-brand/10 text-brand shadow-xs ring-1 ring-brand/30"
+                        : "border-surface-border bg-white text-ink-muted hover:text-ink hover:bg-surface-subtle"
+                    }`}
+                  >
+                    <Banknote className="w-5 h-5 text-brand" />
+                    <span className="text-xs md:text-sm font-bold text-ink">Tunai / Cash</span>
+                    <span className="text-[10px] md:text-[11px] text-ink-muted font-normal">
+                      Bayar di Kasir
+                    </span>
+                  </button>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="bg-emerald-50/70 border border-emerald-200 rounded-2xl p-4 flex items-start gap-3">
+                <div className="w-8 h-8 rounded-xl bg-emerald-500 text-white flex items-center justify-center shrink-0 text-sm font-bold shadow-xs">
+                  WA
+                </div>
+                <div>
+                  <h3 className="text-xs md:text-sm font-extrabold text-emerald-950">
+                    Pemesanan Otomatis via WhatsApp
+                  </h3>
+                  <p className="text-[11px] md:text-xs text-emerald-800 mt-0.5 leading-relaxed">
+                    Setelah menekan tombol di bawah, Anda akan langsung dialihkan ke obrolan WhatsApp resmi Kantin Mini ({currentSetting.whatsappNumber}) dengan daftar pesanan rapi.
+                  </p>
+                </div>
+              </div>
+            )}
 
             {/* Rincian Harga */}
             <div className="bg-surface rounded-2xl p-4 md:p-5 border border-surface-border shadow-xs space-y-2.5 text-xs md:text-sm">
               <div className="flex justify-between text-ink-muted">
                 <span>Subtotal Pesanan</span>
                 <span className="font-bold text-ink">
-                  Rp {subtotal.toLocaleString("id-ID")}
+                  Rp {displayedSubtotal.toLocaleString("id-ID")}
                 </span>
               </div>
               <div className="flex justify-between font-extrabold text-sm md:text-base text-ink pt-3 border-t border-surface-border">
                 <span>Total Pembayaran</span>
                 <span className="text-base md:text-lg font-black text-brand">
-                  Rp {subtotal.toLocaleString("id-ID")}
+                  Rp {displayedSubtotal.toLocaleString("id-ID")}
                 </span>
               </div>
             </div>
@@ -516,30 +595,43 @@ export default function CartClient() {
       </main>
 
       {/* Sticky Bottom Checkout Action */}
-      {cart.length > 0 && (
+      {(displayedCart.length > 0 || isNavigating) && (
         <div className="fixed bottom-0 left-0 right-0 z-40 p-4 border-t border-surface-border bg-white/95 backdrop-blur-md shadow-[0_-4px_20px_rgba(0,0,0,0.06)]">
           <div className="max-w-xl mx-auto flex items-center justify-between gap-4">
             <div>
               <div className="text-xs text-ink-muted font-medium">Total Pembayaran</div>
               <div className="text-lg md:text-xl font-black text-ink tracking-tight">
-                Rp {subtotal.toLocaleString("id-ID")}
+                Rp {displayedSubtotal.toLocaleString("id-ID")}
               </div>
             </div>
 
             <button
               type="button"
-              disabled={isSubmitting}
+              disabled={isSubmitting || isNavigating}
               onClick={handleCheckout}
-              className="btn-press flex-1 py-3 md:py-3.5 px-5 rounded-xl bg-brand hover:bg-brand-hover text-white font-extrabold text-sm md:text-base flex items-center justify-center gap-2 shadow-sm transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+              className={`btn-press flex-1 py-3 md:py-3.5 px-5 rounded-xl font-extrabold text-sm md:text-base flex items-center justify-center gap-2 shadow-sm transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed ${
+                currentSetting.orderMode === "WHATSAPP"
+                  ? "bg-[#25D366] hover:bg-[#1EBE5B] text-white"
+                  : "bg-brand hover:bg-brand-hover text-white"
+              }`}
             >
-              {isSubmitting ? (
+              {isNavigating ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Mengalihkan...
+                </>
+              ) : isSubmitting ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
                   Memproses...
                 </>
+              ) : currentSetting.orderMode === "WHATSAPP" ? (
+                <>
+                  <span>Lanjut ke WhatsApp</span>
+                </>
               ) : (
                 <>
-                  Bayar Sekarang
+                  <span>Bayar Sekarang</span>
                 </>
               )}
             </button>
@@ -589,6 +681,21 @@ export default function CartClient() {
               >
                 Simpan
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Loading Overlay saat berhasil checkout & mengalihkan ke status pesanan */}
+      {isNavigating && (
+        <div className="fixed inset-0 z-50 bg-black/30 backdrop-blur-[2px] flex flex-col items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl p-6 shadow-2xl flex flex-col items-center gap-3 text-center max-w-xs w-full animate-in zoom-in-95 duration-150 border border-surface-border">
+            <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center">
+              <Loader2 className="w-6 h-6 animate-spin text-brand" />
+            </div>
+            <div>
+              <h3 className="font-extrabold text-base text-ink">Pesanan Berhasil!</h3>
+              <p className="text-xs text-ink-muted mt-1">Mengalihkan ke status pesanan...</p>
             </div>
           </div>
         </div>

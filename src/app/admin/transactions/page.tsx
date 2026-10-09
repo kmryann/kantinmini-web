@@ -17,7 +17,13 @@ export default async function AdminTransactionsPage() {
     redirect("/admin");
   }
 
+  const now = new Date();
+  const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
   const orders = await prisma.order.findMany({
+    where: {
+      createdAt: { gte: startOfDay },
+    },
     orderBy: { createdAt: "desc" },
     include: {
       table: true,
@@ -27,7 +33,7 @@ export default async function AdminTransactionsPage() {
         },
       },
     },
-    take: 150,
+    take: 200,
   });
 
   return (

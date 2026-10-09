@@ -32,6 +32,15 @@ export default function StatusClient({ orderId }: StatusClientProps) {
   const [copiedCode, setCopiedCode] = useState<boolean>(false);
   const [isSimulatingPay, setIsSimulatingPay] = useState<boolean>(false);
 
+  // Bersihkan keranjang belanja di localStorage saat tiba di halaman status pesanan
+  useEffect(() => {
+    try {
+      localStorage.removeItem("kantinmini_cart");
+    } catch {
+      // ignore
+    }
+  }, []);
+
   // Fetch Order Details
   const fetchOrder = useCallback(async () => {
     try {

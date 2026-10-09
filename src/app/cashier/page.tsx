@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
 export default async function CashierPage() {
   const session = await getAdminSession();
   if (!session) {
-    redirect("/admin/login");
+    redirect("/login");
   }
 
   // Jika manager membuka kasir, arahkan ke /admin (sesuai aturan: POS hanya di kasir)

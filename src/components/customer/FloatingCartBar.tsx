@@ -36,8 +36,6 @@ export const FloatingCartBar: React.FC = () => {
             <div className="flex flex-col min-w-0">
               <div className="flex items-center gap-1.5 text-[11px] font-medium text-emerald-100/90 leading-tight truncate">
                 <span>{totalItems} Menu</span>
-                <span>•</span>
-                <span>Meja {tableNumber}</span>
               </div>
               <div className="text-base sm:text-lg font-black text-white leading-snug tracking-tight truncate">
                 Rp {subtotal.toLocaleString("id-ID")}

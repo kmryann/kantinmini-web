@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useState, useRef, useTransition, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import Image from "next/image";
+import Link from "next/link";
 import {
   Plus,
   Search,
@@ -60,6 +61,7 @@ export default function AdminMenuClient({
   initialItems = [],
 }: AdminMenuClientProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const [items, setItems] = useState<MenuItemAdminType[]>(initialItems);
   const [categories, setCategories] = useState<CategoryType[]>(initialCategories);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -880,14 +882,13 @@ export default function AdminMenuClient({
               <span>Tambah Kategori</span>
             </button>
 
-            <button
-              type="button"
-              onClick={handleOpenAdd}
+            <Link
+              href={`${pathname}/create`}
               className="btn-press inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand text-white text-xs sm:text-sm font-bold shadow-xs hover:bg-brand-hover transition-all cursor-pointer"
             >
               <Plus className="w-4 h-4" />
               <span>Tambah Menu</span>
-            </button>
+            </Link>
           </div>
         </div>
 
@@ -978,14 +979,13 @@ export default function AdminMenuClient({
                 <span>Reset Pencarian</span>
               </button>
             ) : (
-              <button
-                type="button"
-                onClick={handleOpenAdd}
+              <Link
+                href={`${pathname}/create`}
                 className="btn-press inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-brand text-white text-xs font-bold shadow-xs hover:bg-brand-hover transition-all cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
                 <span>Tambah Menu Pertama</span>
-              </button>
+              </Link>
             )}
           </div>
         ) : (
@@ -1183,14 +1183,13 @@ export default function AdminMenuClient({
 
                             {/* Tombol Edit & Hapus */}
                             <div className="flex items-center gap-1.5 shrink-0">
-                              <button
-                                type="button"
-                                onClick={() => handleOpenEdit(item)}
+                              <Link
+                                href={`${pathname}/${item.id}/edit`}
                                 className="btn-press p-2 rounded-xl bg-surface border border-surface-border text-ink hover:text-brand hover:border-brand/40 shadow-2xs transition-colors cursor-pointer"
                                 title="Edit Menu"
                               >
                                 <Edit2 className="w-3.5 h-3.5" />
-                              </button>
+                              </Link>
 
                               <button
                                 type="button"
@@ -1212,8 +1211,8 @@ export default function AdminMenuClient({
           </div>
         )}
 
-      {/* Modal: Tambah / Edit Menu (Landscape Layout) */}
-      {isMenuModalOpen && (
+      {/* Modal: Tambah / Edit Menu sudah dialihkan ke halaman tersendiri dengan breadcrumb */}
+      {false && isMenuModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 md:p-6 bg-black/65 backdrop-blur-xs overflow-y-auto">
           <div className="w-full max-w-4xl lg:max-w-5xl bg-surface rounded-2xl md:rounded-3xl border border-surface-border shadow-2xl flex flex-col max-h-[92vh] overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-150">
             {/* Header Modal */}
@@ -1223,7 +1222,7 @@ export default function AdminMenuClient({
                   <span>{editingItem ? "Edit Menu" : "Tambah Menu Baru"}</span>
                   {editingItem && (
                     <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-brand-light text-brand">
-                      {editingItem.category?.name || "Kantin Mini"}
+                      {editingItem?.category?.name || "Kantin Mini"}
                     </span>
                   )}
                 </h2>

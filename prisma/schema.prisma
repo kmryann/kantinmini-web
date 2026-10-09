@@ -104,3 +104,10 @@ model AuditLog {
   details           String?  // Metadata / alasan dalam bentuk string atau JSON
   createdAt         DateTime @default(now())
 }
+
+model StoreSetting {
+  id              String   @id @default("default")
+  orderMode       String   @default("DIRECT") // DIRECT (Kasir & POS) atau WHATSAPP (Catalog ke WA)
+  whatsappNumber  String   @default("085117698117")
+  updatedAt       DateTime @updatedAt
+}

@@ -16,6 +16,8 @@ import {
   User as UserIcon,
   Shield,
   Loader2,
+  ChefHat,
+  Settings,
 } from "lucide-react";
 import { LogoKantinMini } from "@/components/common/LogoKantinMini";
 import type { AdminSessionPayload } from "@/lib/auth";
@@ -33,6 +35,12 @@ const getNavItemsForRole = (role: string) => {
         href: "/cashier",
         icon: Store,
         exact: true,
+      },
+      {
+        name: "Pesanan Masuk",
+        href: "/cashier/orders",
+        icon: ChefHat,
+        exact: false,
       },
       {
         name: "Laporan Transaksi",
@@ -62,6 +70,12 @@ const getNavItemsForRole = (role: string) => {
         icon: UtensilsCrossed,
         exact: false,
       },
+      {
+        name: "Pengaturan Mode",
+        href: "/manager/settings",
+        icon: Settings,
+        exact: false,
+      },
     ];
   }
   // Default: ADMIN
@@ -88,6 +102,12 @@ const getNavItemsForRole = (role: string) => {
       name: "Kelola Akun",
       href: "/admin/users",
       icon: Users,
+      exact: false,
+    },
+    {
+      name: "Pengaturan Mode",
+      href: "/admin/settings",
+      icon: Settings,
       exact: false,
     },
   ];
@@ -126,10 +146,10 @@ export default function AdminLayoutClient({
     try {
       setIsLoggingOut(true);
       await fetch("/api/admin/auth/logout", { method: "POST" });
-      router.push("/admin/login");
+      router.push("/login");
       router.refresh();
     } catch {
-      router.push("/admin/login");
+      router.push("/login");
     } finally {
       setIsLoggingOut(false);
     }
@@ -214,7 +234,7 @@ export default function AdminLayoutClient({
   const pageInfo = getPageInfo();
 
   // 2. JIKA HALAMAN LOGIN, KEMBALIKAN CHILDREN SETELAH SEMUA HOOKS SELESAI DIPANGGIL
-  if (pathname === "/admin/login") {
+  if (pathname === "/login" || pathname === "/admin/login") {
     return <>{children}</>;
   }
 
@@ -419,21 +439,6 @@ export default function AdminLayoutClient({
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Global Desktop Top Header Bar for ALL Admin Pages: Judul dan Role saja */}
-        <header className="hidden md:flex h-16 bg-white/95 backdrop-blur-md border-b border-slate-200/80 px-6 lg:px-8 items-center justify-between sticky top-0 z-20 transition-all">
-          {/* Judul Halaman */}
-          <h1 className="text-lg font-black text-ink tracking-tight truncate">
-            {pageInfo.title}
-          </h1>
-
-          {/* Role Pengguna */}
-          <div className="flex items-center gap-2">
-            <span className="px-3.5 py-1 rounded-full bg-brand-light text-brand text-xs font-black uppercase tracking-wider border border-brand/20 shadow-2xs">
-              {currentUser?.role || "ADMIN"}
-            </span>
-          </div>
-        </header>
-
         <main className="flex-1 p-4 md:p-6 lg:p-8 max-w-7xl w-full mx-auto">
           {children}
         </main>

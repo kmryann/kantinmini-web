@@ -72,3 +72,12 @@ export interface OrderDetails {
     notes?: string | null;
   }[];
 }
+
+export type OrderModeChoice = "DIRECT" | "WHATSAPP";
+
+export interface StoreSettingType {
+  id: string;
+  orderMode: OrderModeChoice;
+  whatsappNumber: string;
+  updatedAt: string;
+}

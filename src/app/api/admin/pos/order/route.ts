@@ -73,7 +73,14 @@ export async function POST(request: Request) {
     const randomSuffix = Math.floor(100 + Math.random() * 900);
     const orderNumber = `POS-${Date.now().toString().slice(-4)}${randomSuffix}`;
 
-    const isPaid = isPaidNow !== false; // Default true for POS
+    const isQRIS = paymentMethod === "QRIS";
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+    const qrisPayload = isQRIS
+      ? `00020101021226670016ID.KANTINMINI.WWW01189360091100223456780215${orderNumber}520458125303360540${totalAmount}5802ID5911KANTIN MINI6007BANDUNG6304`
+      : null;
+
+    // Untuk QRIS di POS, jika isPaidNow false atau default QRIS kasir, status awal PENDING_PAYMENT sampai di-scan/konfirmasi
+    const isPaid = !isQRIS && isPaidNow !== false;
     const status = isPaid ? "PROSES" : "PENDING_PAYMENT";
     const paymentStatus = isPaid ? "PAID" : "PENDING";
 
@@ -85,11 +92,13 @@ export async function POST(request: Request) {
           customerName: customerName.trim(),
           orderType: orderType === "TAKEAWAY" ? "TAKEAWAY" : "DINE_IN",
           status,
-          paymentMethod: paymentMethod === "QRIS" ? "QRIS" : "CASH",
+          paymentMethod: isQRIS ? "QRIS" : "CASH",
           paymentStatus,
           subtotal,
           discountAmount: 0,
           totalAmount,
+          qrisPayload,
+          qrisExpiresAt: isQRIS ? expiresAt : null,
           items: {
             create: validatedItems,
           },
@@ -115,18 +124,21 @@ export async function POST(request: Request) {
     });
 
     // Broadcast SSE to kitchen and monitors
-    sseBroadcaster.broadcast(order.id, {
-      type: "ORDER_CREATED",
+    sseBroadcaster.broadcast("ORDER_CREATED", {
       orderId: order.id,
       orderNumber: order.orderNumber,
       status: order.status,
       paymentStatus: order.paymentStatus,
+      tableNumber: table.tableNumber,
+      customerName: order.customerName,
+      totalAmount: order.totalAmount,
+      paymentMethod: order.paymentMethod,
       timestamp: new Date().toISOString(),
     });
 
     return NextResponse.json({
       success: true,
-      order,
+      data: order,
       cashChange:
         cashReceived && Number(cashReceived) >= totalAmount
           ? Number(cashReceived) - totalAmount

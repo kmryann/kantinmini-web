@@ -3,6 +3,8 @@
 import React, { useState, useMemo } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
+import QRCode from "qrcode";
 import {
   Store,
   Receipt,
@@ -42,6 +44,7 @@ interface MenuItem {
   price: number;
   imageUrl: string;
   categoryId: string;
+  sortOrder?: number;
   hasSauceModifier: boolean;
   modifierName?: string | null;
   modifierOptions?: string | null;
@@ -65,15 +68,18 @@ interface PosCartItem {
 }
 
 interface CompletedOrderData {
+  orderId?: string;
   orderNumber: string;
   customerName: string;
   orderType: string;
   tableNumber?: number;
   paymentMethod: string;
+  paymentStatus?: string;
   subtotal: number;
   totalAmount: number;
   cashReceived?: number;
   cashChange?: number;
+  qrisDataUrl?: string;
   items: Array<{
     name: string;
     quantity: number;
@@ -103,7 +109,9 @@ export default function CashierClient({
 
 
   // POS State
-  const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
+  const [selectedCategory, setSelectedCategory] = useState<string>(
+    categories[0]?.id || ""
+  );
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [customerName, setCustomerName] = useState<string>("");
   const [orderType, setOrderType] = useState<"DINE_IN" | "TAKEAWAY">("DINE_IN");
@@ -119,20 +127,26 @@ export default function CashierClient({
   const [sauceModalItem, setSauceModalItem] = useState<MenuItem | null>(null);
   const [pendingSauce, setPendingSauce] = useState<string>("Saus BBQ");
 
-
-
-  // Filtered menu items for POS
+  // Filtered menu items for POS - diurutkan sesuai urutan kategori & urutan menu yang diatur Manager
   const filteredItems = useMemo(() => {
-    return items.filter((item) => {
-      const matchCat =
-        selectedCategory === "ALL" || item.categoryId === selectedCategory;
-      const matchSearch =
-        !searchQuery ||
-        item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (item.description &&
-          item.description.toLowerCase().includes(searchQuery.toLowerCase()));
-      return matchCat && matchSearch;
-    });
+    return items
+      .filter((item) => {
+        // Jika sedang mencari teks, cari di semua kategori; jika tidak, filter berdasarkan kategori terpilih
+        const matchCat = searchQuery.trim()
+          ? true
+          : item.categoryId === selectedCategory;
+        const matchSearch =
+          !searchQuery.trim() ||
+          item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          (item.description &&
+            item.description.toLowerCase().includes(searchQuery.toLowerCase()));
+        return matchCat && matchSearch;
+      })
+      .sort((a, b) => {
+        const itemOrderA = a.sortOrder ?? 0;
+        const itemOrderB = b.sortOrder ?? 0;
+        return itemOrderA - itemOrderB;
+      });
   }, [items, selectedCategory, searchQuery]);
 
   // Calculations
@@ -239,9 +253,15 @@ export default function CashierClient({
       alert("Keranjang kasir masih kosong.");
       return;
     }
-    if (paymentMethod === "CASH" && cashReceivedInput && cashReceived < subtotal) {
-      alert("Nominal uang tunai kurang dari total tagihan.");
-      return;
+    if (paymentMethod === "CASH") {
+      if (!cashReceivedInput.trim()) {
+        alert("Nominal uang yang diterima wajib diisi.");
+        return;
+      }
+      if (cashReceived < subtotal) {
+        alert("Nominal uang tunai kurang dari total tagihan.");
+        return;
+      }
     }
 
     try {
@@ -254,7 +274,7 @@ export default function CashierClient({
           orderType,
           tableNumber: orderType === "DINE_IN" ? selectedTable : 1,
           paymentMethod,
-          isPaidNow: true,
+          isPaidNow: paymentMethod === "CASH", // Cash langsung lunas, QRIS bayar via scan QR
           cashReceived: paymentMethod === "CASH" ? cashReceived : undefined,
           items: cart.map((c) => ({
             menuItemId: c.menuItemId,
@@ -274,17 +294,34 @@ export default function CashierClient({
 
       const created = json.data;
 
+      // Generate QRIS Data URL jika metode pembayaran QRIS
+      let qrisUrl: string | undefined = undefined;
+      if (created.paymentMethod === "QRIS" && created.qrisPayload) {
+        try {
+          qrisUrl = await QRCode.toDataURL(created.qrisPayload, {
+            width: 260,
+            margin: 1,
+            color: { dark: "#1F1D1A", light: "#FFFFFF" },
+          });
+        } catch (err) {
+          console.error("Gagal generate QRIS QR:", err);
+        }
+      }
+
       // Update state data order selesai
       const completed: CompletedOrderData = {
+        orderId: created.id,
         orderNumber: created.orderNumber,
         customerName: created.customerName,
         orderType: created.orderType,
         tableNumber: created.table?.tableNumber,
         paymentMethod: created.paymentMethod,
+        paymentStatus: created.paymentStatus,
         subtotal: created.subtotal,
         totalAmount: created.totalAmount,
         cashReceived: paymentMethod === "CASH" ? cashReceived : undefined,
         cashChange: paymentMethod === "CASH" ? changeAmount : undefined,
+        qrisDataUrl: qrisUrl,
         items: created.items.map((it: any) => ({
           name: it.menuItem.name,
           quantity: it.quantity,
@@ -299,13 +336,14 @@ export default function CashierClient({
 
       setCompletedOrder(completed);
 
-
       // Reset form
       setCart([]);
       setCustomerName("");
       setCashReceivedInput("");
-    } catch {
-      alert("Terjadi kesalahan koneksi saat memproses order.");
+    } catch (err: unknown) {
+      console.error("POS order error:", err);
+      const msg = err instanceof Error ? err.message : "Terjadi kesalahan saat memproses order.";
+      alert(msg);
     } finally {
       setIsSubmitting(false);
     }
@@ -390,33 +428,32 @@ export default function CashierClient({
                     )}
                   </div>
 
-                  {/* Category Filter Pills */}
-                  <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
-                    <button
-                      type="button"
-                      onClick={() => setSelectedCategory("ALL")}
-                      className={`btn-press px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer ${
-                        selectedCategory === "ALL"
-                          ? "bg-brand text-white shadow-2xs"
-                          : "bg-surface-subtle text-ink-muted hover:text-ink border border-surface-border/60"
-                      }`}
-                    >
-                      Semua
-                    </button>
-                    {categories.map((cat) => (
-                      <button
-                        key={cat.id}
-                        type="button"
-                        onClick={() => setSelectedCategory(cat.id)}
-                        className={`btn-press px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer ${
-                          selectedCategory === cat.id
-                            ? "bg-brand text-white shadow-2xs"
-                            : "bg-surface-subtle text-ink-muted hover:text-ink border border-surface-border/60"
-                        }`}
-                      >
-                        {cat.name}
-                      </button>
-                    ))}
+                  {/* Category Navigation Tabs (Sama seperti halaman order user tanpa tab Semua) */}
+                  <div className="flex items-center gap-1 overflow-x-auto no-scrollbar border-b border-surface-border pt-0.5">
+                    {categories.map((cat) => {
+                      const isActive = selectedCategory === cat.id;
+                      return (
+                        <button
+                          key={cat.id}
+                          type="button"
+                          onClick={() => setSelectedCategory(cat.id)}
+                          className={`btn-press relative whitespace-nowrap pt-2 pb-2.5 px-3 text-xs md:text-sm font-bold transition-colors shrink-0 cursor-pointer ${
+                            isActive
+                              ? "text-brand font-black"
+                              : "text-ink-muted hover:text-ink"
+                          }`}
+                        >
+                          <span>{cat.name}</span>
+                          {isActive && (
+                            <motion.span
+                              layoutId="posCategoryUnderline"
+                              className="absolute bottom-0 left-2 right-2 h-0.5 rounded-full bg-brand"
+                              transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                            />
+                          )}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -483,45 +520,37 @@ export default function CashierClient({
                   )}
                 </div>
 
-                {/* Form Data Pelanggan & Meja */}
+                {/* Form Data Pelanggan & Meja: Tipe Pesanan di Paling Atas */}
                 <div className="space-y-3">
+                  {/* Order Type Tabs */}
                   <div>
                     <label className="text-xs font-bold text-ink block mb-1">
-                      Nama Pelanggan <span className="text-rose-500">*</span>
+                      Tipe Pesanan <span className="text-rose-500">*</span>
                     </label>
-                    <input
-                      type="text"
-                      value={customerName}
-                      onChange={(e) => setCustomerName(e.target.value)}
-                      placeholder="Masukkan nama pelanggan..."
-                      className="w-full px-3 py-2 rounded-xl border border-surface-border text-xs bg-white focus:outline-hidden focus:border-brand font-medium"
-                    />
-                  </div>
-
-                  {/* Order Type Tabs */}
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setOrderType("DINE_IN")}
-                      className={`btn-press py-2 rounded-xl text-xs font-bold border transition-all ${
-                        orderType === "DINE_IN"
-                          ? "bg-brand text-white border-brand shadow-xs"
-                          : "bg-surface text-ink-secondary border-surface-border hover:bg-surface-subtle"
-                      }`}
-                    >
-                      Makan di Tempat
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setOrderType("TAKEAWAY")}
-                      className={`btn-press py-2 rounded-xl text-xs font-bold border transition-all ${
-                        orderType === "TAKEAWAY"
-                          ? "bg-brand text-white border-brand shadow-xs"
-                          : "bg-surface text-ink-secondary border-surface-border hover:bg-surface-subtle"
-                      }`}
-                    >
-                      Bungkus (Takeaway)
-                    </button>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setOrderType("DINE_IN")}
+                        className={`btn-press py-2 rounded-xl text-xs font-bold border transition-all ${
+                          orderType === "DINE_IN"
+                            ? "bg-brand text-white border-brand shadow-xs"
+                            : "bg-surface text-ink-secondary border-surface-border hover:bg-surface-subtle"
+                        }`}
+                      >
+                        Makan di Tempat
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setOrderType("TAKEAWAY")}
+                        className={`btn-press py-2 rounded-xl text-xs font-bold border transition-all ${
+                          orderType === "TAKEAWAY"
+                            ? "bg-brand text-white border-brand shadow-xs"
+                            : "bg-surface text-ink-secondary border-surface-border hover:bg-surface-subtle"
+                        }`}
+                      >
+                        Bungkus (Takeaway)
+                      </button>
+                    </div>
                   </div>
 
                   {/* Nomor Meja jika Dine In */}
@@ -548,6 +577,20 @@ export default function CashierClient({
                       </div>
                     </div>
                   )}
+
+                  {/* Nama Pelanggan */}
+                  <div>
+                    <label className="text-xs font-bold text-ink block mb-1">
+                      Nama Pelanggan <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={customerName}
+                      onChange={(e) => setCustomerName(e.target.value)}
+                      placeholder="Masukkan nama pelanggan..."
+                      className="w-full px-3 py-2 rounded-xl border border-surface-border text-xs bg-white focus:outline-hidden focus:border-brand font-medium"
+                    />
+                  </div>
                 </div>
 
                 {/* Daftar Item di Keranjang */}
@@ -665,6 +708,12 @@ export default function CashierClient({
                         </button>
                       </div>
 
+                      {cashReceivedInput && cashReceived < subtotal && (
+                        <p className="text-[11px] text-rose-600 font-bold">
+                          Uang diterima kurang Rp {(subtotal - cashReceived).toLocaleString("id-ID")}
+                        </p>
+                      )}
+
                       {cashReceived >= subtotal && (
                         <div className="p-2 rounded-xl bg-emerald-50 text-emerald-800 text-xs font-extrabold flex justify-between">
                           <span>Kembalian:</span>
@@ -685,7 +734,11 @@ export default function CashierClient({
                   <button
                     type="button"
                     onClick={handleSubmitOrder}
-                    disabled={isSubmitting || cart.length === 0}
+                    disabled={
+                      isSubmitting ||
+                      cart.length === 0 ||
+                      (paymentMethod === "CASH" && (!cashReceivedInput.trim() || cashReceived < subtotal))
+                    }
                     className="btn-press w-full py-3 rounded-2xl bg-brand text-white font-black text-sm shadow-md hover:bg-brand-hover transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isSubmitting ? (
@@ -763,9 +816,37 @@ export default function CashierClient({
               <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
                 <CheckCircle2 className="w-6 h-6" />
               </div>
-              <h3 className="font-extrabold text-base text-ink">Transaksi Berhasil!</h3>
-              <p className="text-xs text-ink-muted">Pesanan telah tercatat di kasir & dapur.</p>
+              <h3 className="font-extrabold text-base text-ink">
+                {completedOrder.paymentMethod === "QRIS"
+                  ? "Scan QRIS Pembayaran"
+                  : "Transaksi Berhasil!"}
+              </h3>
+              <p className="text-xs text-ink-muted">
+                {completedOrder.paymentMethod === "QRIS"
+                  ? "Arahkan pelanggan untuk scan kode QR di bawah ini."
+                  : "Pesanan telah tercatat di kasir & dapur."}
+              </p>
             </div>
+
+            {/* QR Code QRIS Display */}
+            {completedOrder.paymentMethod === "QRIS" && completedOrder.qrisDataUrl && (
+              <div className="flex flex-col items-center justify-center p-4 bg-white rounded-2xl border border-surface-border shadow-xs space-y-2">
+                <div className="p-2 bg-white rounded-xl border border-surface-border">
+                  <Image
+                    src={completedOrder.qrisDataUrl}
+                    alt="QRIS Code Kantin Mini"
+                    width={200}
+                    height={200}
+                    className="rounded-lg"
+                    priority
+                  />
+                </div>
+                <div className="text-center space-y-0.5">
+                  <p className="text-xs font-black text-ink">NMID: ID1022123456789</p>
+                  <p className="text-[11px] text-ink-muted">Mendukung GoPay, OVO, Dana, BCA, Livin, dll.</p>
+                </div>
+              </div>
+            )}
 
             <div className="bg-surface-subtle/60 p-4 rounded-2xl border border-surface-border space-y-2 font-mono text-xs">
               <div className="text-center border-b border-dashed border-surface-border pb-2">

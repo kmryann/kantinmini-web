@@ -11,6 +11,14 @@ export const dynamic = "force-dynamic";
 export default async function OrderPage() {
   let initialCategories: CategoryWithItems[] = [];
 
+  let initialSetting: {
+    orderMode: "DIRECT" | "WHATSAPP";
+    whatsappNumber: string;
+  } = {
+    orderMode: "WHATSAPP",
+    whatsappNumber: "085117698117",
+  };
+
   try {
     const rawCategories = await prisma.category.findMany({
       orderBy: { sortOrder: "asc" },
@@ -20,6 +28,16 @@ export default async function OrderPage() {
         },
       },
     });
+
+    const setting = await prisma.storeSetting.findUnique({
+      where: { id: "default" },
+    });
+    if (setting) {
+      initialSetting = {
+        orderMode: (setting.orderMode as "DIRECT" | "WHATSAPP") || "WHATSAPP",
+        whatsappNumber: setting.whatsappNumber || "085117698117",
+      };
+    }
 
     initialCategories = rawCategories.map((c) => ({
       id: c.id,
@@ -56,7 +74,10 @@ export default async function OrderPage() {
           </div>
         }
       >
-        <OrderClient initialCategories={initialCategories} />
+        <OrderClient
+          initialCategories={initialCategories}
+          storeSetting={initialSetting}
+        />
       </Suspense>
     </CartProvider>
   );

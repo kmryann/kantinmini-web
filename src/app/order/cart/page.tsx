@@ -1,9 +1,34 @@
 import React, { Suspense } from "react";
 import CartClient from "./CartClient";
 import { CartProvider } from "@/context/CartContext";
+import { prisma } from "@/lib/prisma";
 import { Loader2 } from "lucide-react";
 
-export default function CartPage() {
+export const dynamic = "force-dynamic";
+
+export default async function CartPage() {
+  let initialSetting: {
+    orderMode: "DIRECT" | "WHATSAPP";
+    whatsappNumber: string;
+  } = {
+    orderMode: "WHATSAPP",
+    whatsappNumber: "085117698117",
+  };
+
+  try {
+    const setting = await prisma.storeSetting.findUnique({
+      where: { id: "default" },
+    });
+    if (setting) {
+      initialSetting = {
+        orderMode: (setting.orderMode as "DIRECT" | "WHATSAPP") || "WHATSAPP",
+        whatsappNumber: setting.whatsappNumber || "085117698117",
+      };
+    }
+  } catch (err) {
+    console.error("Error pre-fetching store setting in CartPage:", err);
+  }
+
   return (
     <CartProvider>
       <Suspense
@@ -16,7 +41,7 @@ export default function CartPage() {
           </div>
         }
       >
-        <CartClient />
+        <CartClient storeSetting={initialSetting} />
       </Suspense>
     </CartProvider>
   );

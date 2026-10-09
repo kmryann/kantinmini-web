@@ -62,21 +62,26 @@ export default function TransactionsClient({
   const [orders, setOrders] = useState<OrderDetail[]>(initialOrders);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedRange, setSelectedRange] = useState<string>("all");
+  const [selectedRange, setSelectedRange] = useState<string>("today");
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
   const [selectedMethod, setSelectedMethod] = useState<string>("all");
 
   // Selected Order for Modal
   const [detailOrder, setDetailOrder] = useState<OrderDetail | null>(null);
 
-  const handleRefresh = async () => {
+  const fetchTransactions = async (
+    range = selectedRange,
+    status = selectedStatus,
+    method = selectedMethod,
+    query = searchQuery
+  ) => {
     try {
       setIsRefreshing(true);
       const params = new URLSearchParams();
-      if (selectedRange !== "all") params.set("range", selectedRange);
-      if (selectedStatus !== "all") params.set("status", selectedStatus);
-      if (selectedMethod !== "all") params.set("paymentMethod", selectedMethod);
-      if (searchQuery.trim()) params.set("query", searchQuery.trim());
+      if (range !== "all") params.set("range", range);
+      if (status !== "all") params.set("status", status);
+      if (method !== "all") params.set("paymentMethod", method);
+      if (query.trim()) params.set("query", query.trim());
 
       const res = await fetch(`/api/admin/transactions?${params.toString()}`);
       const json = await res.json();
@@ -88,6 +93,15 @@ export default function TransactionsClient({
     } finally {
       setIsRefreshing(false);
     }
+  };
+
+  const handleRangeChange = (newRange: string) => {
+    setSelectedRange(newRange);
+    fetchTransactions(newRange, selectedStatus, selectedMethod, searchQuery);
+  };
+
+  const handleRefresh = () => {
+    fetchTransactions(selectedRange, selectedStatus, selectedMethod, searchQuery);
   };
 
   // Filtered Orders
@@ -112,16 +126,16 @@ export default function TransactionsClient({
     });
   }, [orders, selectedStatus, selectedMethod, searchQuery]);
 
-  // Statistik
+  // Statistik Ringkas & Relevan
   const stats = useMemo(() => {
     const paid = filteredOrders.filter(
       (o) => o.paymentStatus === "PAID" && o.status !== "VOID"
     );
     const totalRevenue = paid.reduce((sum, o) => sum + o.totalAmount, 0);
     const totalCount = filteredOrders.length;
-    const cashCount = paid.filter((o) => o.paymentMethod === "CASH").length;
-    const qrisCount = paid.filter((o) => o.paymentMethod === "QRIS").length;
-    return { totalRevenue, totalCount, cashCount, qrisCount };
+    const paidCount = paid.length;
+    const paidPercent = totalCount > 0 ? Math.round((paidCount / totalCount) * 100) : 0;
+    return { totalRevenue, totalCount, paidCount, paidPercent };
   }, [filteredOrders]);
 
   const getStatusBadge = (status: string, paymentStatus: string) => {
@@ -173,8 +187,8 @@ export default function TransactionsClient({
 
   return (
     <div className="space-y-6">
-      {/* 4 Metric Cards Ringkasan Transaksi */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* 3 Metric Cards Ringkasan Transaksi */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-surface p-4.5 rounded-2xl border border-surface-border shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-ink-muted uppercase tracking-wider">
@@ -185,11 +199,11 @@ export default function TransactionsClient({
             </div>
           </div>
           <div className="mt-3">
-            <span className="text-xl sm:text-2xl font-black text-ink tracking-tight block">
+            <span className="text-xl sm:text-2xl font-black text-ink tracking-tight block font-mono">
               Rp {stats.totalRevenue.toLocaleString("id-ID")}
             </span>
             <span className="text-[11px] text-ink-muted font-medium mt-0.5 block">
-              Dari pesanan lunas
+              Dari {stats.paidCount} transaksi lunas
             </span>
           </div>
         </div>
@@ -204,8 +218,8 @@ export default function TransactionsClient({
             </div>
           </div>
           <div className="mt-3">
-            <span className="text-xl sm:text-2xl font-black text-ink tracking-tight block">
-              {stats.totalCount}
+            <span className="text-xl sm:text-2xl font-black text-ink tracking-tight block font-mono">
+              {stats.totalCount} <span className="text-sm font-semibold text-ink-muted">Pesanan</span>
             </span>
             <span className="text-[11px] text-ink-muted font-medium mt-0.5 block">
               Semua status transaksi
@@ -216,37 +230,18 @@ export default function TransactionsClient({
         <div className="bg-surface p-4.5 rounded-2xl border border-surface-border shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-ink-muted uppercase tracking-wider">
-              Pembayaran Tunai
-            </span>
-            <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
-              <Banknote className="w-5 h-5" />
-            </div>
-          </div>
-          <div className="mt-3">
-            <span className="text-xl sm:text-2xl font-black text-ink tracking-tight block">
-              {stats.cashCount}
-            </span>
-            <span className="text-[11px] text-ink-muted font-medium mt-0.5 block">
-              Transaksi uang kas
-            </span>
-          </div>
-        </div>
-
-        <div className="bg-surface p-4.5 rounded-2xl border border-surface-border shadow-xs flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-ink-muted uppercase tracking-wider">
-              Pembayaran QRIS
+              Transaksi Lunas
             </span>
             <div className="w-9 h-9 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
-              <CreditCard className="w-5 h-5" />
+              <CheckCircle2 className="w-5 h-5" />
             </div>
           </div>
           <div className="mt-3">
-            <span className="text-xl sm:text-2xl font-black text-ink tracking-tight block">
-              {stats.qrisCount}
+            <span className="text-xl sm:text-2xl font-black text-ink tracking-tight block font-mono">
+              {stats.paidCount} <span className="text-sm font-semibold text-ink-muted">({stats.paidPercent}%)</span>
             </span>
             <span className="text-[11px] text-ink-muted font-medium mt-0.5 block">
-              Transaksi non-tunai QRIS
+              Pesanan selesai terbayar
             </span>
           </div>
         </div>
@@ -270,7 +265,7 @@ export default function TransactionsClient({
             disabled={isRefreshing}
             className="btn-press inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-surface border border-surface-border hover:bg-surface-subtle text-xs font-bold text-ink transition-all cursor-pointer shadow-2xs self-start sm:self-auto"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
+            <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin text-brand" : ""}`} />
             <span>Perbarui Data</span>
           </button>
         </div>
@@ -301,20 +296,21 @@ export default function TransactionsClient({
           {/* Date Range Select */}
           <select
             value={selectedRange}
-            onChange={(e) => setSelectedRange(e.target.value)}
-            className="px-3 py-2 rounded-xl border border-surface-border text-xs bg-white focus:outline-hidden focus:border-brand font-medium text-ink"
+            onChange={(e) => handleRangeChange(e.target.value)}
+            className="px-3 py-2 rounded-xl border border-surface-border text-xs bg-white focus:outline-hidden focus:border-brand font-bold text-ink cursor-pointer"
           >
-            <option value="all">Semua Waktu</option>
             <option value="today">Hari Ini</option>
+            <option value="yesterday">Kemarin</option>
             <option value="7d">7 Hari Terakhir</option>
             <option value="30d">30 Hari Terakhir</option>
+            <option value="all">Semua Waktu</option>
           </select>
 
           {/* Status Select */}
           <select
             value={selectedStatus}
             onChange={(e) => setSelectedStatus(e.target.value)}
-            className="px-3 py-2 rounded-xl border border-surface-border text-xs bg-white focus:outline-hidden focus:border-brand font-medium text-ink"
+            className="px-3 py-2 rounded-xl border border-surface-border text-xs bg-white focus:outline-hidden focus:border-brand font-medium text-ink cursor-pointer"
           >
             <option value="all">Semua Status</option>
             <option value="SELESAI">Selesai (Lunas)</option>
@@ -328,7 +324,7 @@ export default function TransactionsClient({
           <select
             value={selectedMethod}
             onChange={(e) => setSelectedMethod(e.target.value)}
-            className="px-3 py-2 rounded-xl border border-surface-border text-xs bg-white focus:outline-hidden focus:border-brand font-medium text-ink"
+            className="px-3 py-2 rounded-xl border border-surface-border text-xs bg-white focus:outline-hidden focus:border-brand font-medium text-ink cursor-pointer"
           >
             <option value="all">Semua Metode Bayar</option>
             <option value="CASH">Tunai (Cash)</option>
@@ -340,12 +336,29 @@ export default function TransactionsClient({
       {/* Transaction Table */}
       <div className="bg-surface rounded-2xl border border-surface-border shadow-xs overflow-hidden">
         {filteredOrders.length === 0 ? (
-          <div className="p-12 text-center space-y-2">
-            <Receipt className="w-8 h-8 text-ink-muted mx-auto" />
-            <p className="text-sm font-bold text-ink">Tidak ada transaksi yang cocok</p>
-            <p className="text-xs text-ink-muted">
-              Coba reset filter atau ubah kata kunci pencarian.
-            </p>
+          <div className="p-12 text-center space-y-3">
+            <Receipt className="w-9 h-9 text-ink-muted mx-auto opacity-40" />
+            <div className="space-y-1">
+              <p className="text-sm font-bold text-ink">
+                {selectedRange === "today"
+                  ? "Belum ada transaksi pada hari ini"
+                  : "Tidak ada transaksi yang cocok"}
+              </p>
+              <p className="text-xs text-ink-muted">
+                {selectedRange === "today"
+                  ? "Ubah filter periode tanggal untuk melihat transaksi hari sebelumnya."
+                  : "Coba reset filter atau ubah kata kunci pencarian."}
+              </p>
+            </div>
+            {selectedRange === "today" && (
+              <button
+                type="button"
+                onClick={() => handleRangeChange("all")}
+                className="btn-press inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-brand/10 text-brand text-xs font-bold hover:bg-brand/20 transition-all cursor-pointer"
+              >
+                Lihat Semua Riwayat
+              </button>
+            )}
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -540,14 +553,20 @@ export default function TransactionsClient({
 
             {/* Actions */}
             <div className="flex items-center gap-2 pt-1">
-              <button
-                type="button"
-                onClick={handlePrint}
-                className="btn-press flex-1 py-2.5 rounded-xl bg-brand hover:bg-brand-hover text-white text-xs font-bold shadow-xs cursor-pointer flex items-center justify-center gap-1.5"
-              >
-                <Printer className="w-4 h-4" />
-                <span>Cetak Nota</span>
-              </button>
+              {detailOrder.paymentStatus === "PAID" ? (
+                <button
+                  type="button"
+                  onClick={handlePrint}
+                  className="btn-press flex-1 py-2.5 rounded-xl bg-brand hover:bg-brand-hover text-white text-xs font-bold shadow-xs cursor-pointer flex items-center justify-center gap-1.5"
+                >
+                  <Printer className="w-4 h-4" />
+                  <span>Cetak Nota</span>
+                </button>
+              ) : (
+                <div className="flex-1 py-2 px-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs font-semibold text-center">
+                  Nota dapat dicetak setelah pesanan lunas
+                </div>
+              )}
 
               <button
                 type="button"

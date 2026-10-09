@@ -15,7 +15,7 @@ export default async function ManagerLayout({
 }) {
   const session = await getAdminSession();
   if (!session) {
-    redirect("/admin/login");
+    redirect("/login");
   }
   if (session.role === "CASHIER") {
     redirect("/cashier");

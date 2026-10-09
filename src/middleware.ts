@@ -15,19 +15,25 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // 2. Cek apakah ini rute terproteksi (admin, manager, atau cashier)
+  // 2. Cek apakah ini rute terproteksi (admin, manager, atau cashier) atau halaman login
   const isAdminPage = pathname.startsWith("/admin");
   const isManagerPage = pathname.startsWith("/manager");
   const isCashierPage = pathname.startsWith("/cashier");
   const isAdminApi = pathname.startsWith("/api/admin");
   const isCashierApi = pathname.startsWith("/api/cashier");
+  const isLoginPage = pathname === "/login";
+  const isAdminLoginPage = pathname === "/admin/login";
 
-  if (!isAdminPage && !isManagerPage && !isCashierPage && !isAdminApi && !isCashierApi) {
+  // Redirect /admin/login ke /login
+  if (isAdminLoginPage) {
+    return NextResponse.redirect(new URL("/login", req.url));
+  }
+
+  if (!isAdminPage && !isManagerPage && !isCashierPage && !isAdminApi && !isCashierApi && !isLoginPage) {
     return NextResponse.next();
   }
 
   // 3. Endpoint & Halaman Publik yang tidak memerlukan login
-  const isLoginPage = pathname === "/admin/login";
   const isAuthApi = pathname.startsWith("/api/admin/auth");
 
   // Baca session cookie
@@ -65,7 +71,7 @@ export async function middleware(req: NextRequest) {
     }
 
     // Untuk Halaman, redirect ke halaman login dengan callbackUrl
-    const loginUrl = new URL("/admin/login", req.url);
+    const loginUrl = new URL("/login", req.url);
     if (pathname !== "/admin" && pathname !== "/manager" && pathname !== "/cashier") {
       loginUrl.searchParams.set("callbackUrl", pathname);
     }
@@ -76,13 +82,18 @@ export async function middleware(req: NextRequest) {
   const { role } = session;
 
   // 1. Role CASHIER:
-  // - Hanya boleh mengakses halaman /cashier/* dan API transactions
+  // - Hanya boleh mengakses halaman /cashier/* dan API terkait kasir (transactions, orders, pos)
   // - Jika mencoba mengakses /admin/* atau /manager/*, alihkan ke /cashier
   if (role === "CASHIER") {
     if (isAdminPage || isManagerPage) {
       return NextResponse.redirect(new URL("/cashier", req.url));
     }
-    if (isAdminApi && !pathname.startsWith("/api/admin/transactions")) {
+    const isAllowedCashierApi =
+      pathname.startsWith("/api/admin/transactions") ||
+      pathname.startsWith("/api/admin/orders") ||
+      pathname.startsWith("/api/admin/pos");
+
+    if (isAdminApi && !isAllowedCashierApi) {
       return NextResponse.json(
         { success: false, error: "Akses ditolak. Fitur ini hanya untuk Admin/Manager." },
         { status: 403 }
@@ -116,6 +127,8 @@ export async function middleware(req: NextRequest) {
 
 export const config = {
   matcher: [
+    "/login",
+    "/admin/login",
     "/admin/:path*",
     "/manager/:path*",
     "/cashier/:path*",

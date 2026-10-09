@@ -21,12 +21,16 @@ export async function GET(req: NextRequest) {
     const query = searchParams.get("query")?.trim() || "";
 
     // Tentukan filter tanggal
-    let dateFilter: { gte?: Date } | undefined = undefined;
+    let dateFilter: { gte?: Date; lte?: Date } | undefined = undefined;
     const now = new Date();
 
     if (range === "today") {
       const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       dateFilter = { gte: startOfDay };
+    } else if (range === "yesterday") {
+      const startOfYesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+      const endOfYesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, -1);
+      dateFilter = { gte: startOfYesterday, lte: endOfYesterday };
     } else if (range === "7d") {
       const sevenDaysAgo = new Date();
       sevenDaysAgo.setDate(now.getDate() - 7);
@@ -39,7 +43,7 @@ export async function GET(req: NextRequest) {
 
     // Bangun klausa where
     const where: {
-      createdAt?: { gte?: Date };
+      createdAt?: { gte?: Date; lte?: Date };
       status?: string;
       paymentMethod?: string;
       OR?: Array<{

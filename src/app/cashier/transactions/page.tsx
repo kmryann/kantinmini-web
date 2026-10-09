@@ -14,10 +14,16 @@ export const dynamic = "force-dynamic";
 export default async function CashierTransactionsPage() {
   const session = await getAdminSession();
   if (!session) {
-    redirect("/admin/login");
+    redirect("/login");
   }
 
+  const now = new Date();
+  const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
   const orders = await prisma.order.findMany({
+    where: {
+      createdAt: { gte: startOfDay },
+    },
     orderBy: { createdAt: "desc" },
     include: {
       table: true,
@@ -27,7 +33,7 @@ export default async function CashierTransactionsPage() {
         },
       },
     },
-    take: 100,
+    take: 200,
   });
 
   return (

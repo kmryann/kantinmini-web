@@ -21,14 +21,22 @@ import {
 
 interface OrderClientProps {
   initialCategories?: CategoryWithItems[];
+  storeSetting?: {
+    orderMode: "DIRECT" | "WHATSAPP";
+    whatsappNumber: string;
+  };
 }
 
-export default function OrderClient({ initialCategories = [] }: OrderClientProps) {
+export default function OrderClient({
+  initialCategories = [],
+  storeSetting = { orderMode: "WHATSAPP", whatsappNumber: "085117698117" },
+}: OrderClientProps) {
   const searchParams = useSearchParams();
   const { setTableNumber, tableNumber, addToCart } = useCart();
 
   const [categories, setCategories] =
     useState<CategoryWithItems[]>(initialCategories);
+  const [currentSetting, setCurrentSetting] = useState(storeSetting);
   const [isLoading, setIsLoading] = useState<boolean>(initialCategories.length === 0);
   const [error, setError] = useState<string | null>(null);
 
@@ -272,17 +280,24 @@ export default function OrderClient({ initialCategories = [] }: OrderClientProps
               </div>
             </div>
 
-            {/* Table Number Badge & Switcher - Gaya Minimalis Ikonik */}
-            <button
-              type="button"
-              onClick={() => setIsTableModalOpen(true)}
-              className="btn-press inline-flex items-center gap-1.5 py-1 px-2.5 rounded-lg text-white hover:bg-white/10 active:scale-95 transition-all"
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-pulse" />
-              <span className="text-xs font-medium text-emerald-100/90">Meja</span>
-              <span className="text-sm font-extrabold text-white tracking-tight">{tableNumber}</span>
-              <ChevronDown className="w-3.5 h-3.5 text-white/70 ml-0.5" />
-            </button>
+            {/* Table Number Badge & Switcher - Hanya muncul di mode DIRECT (POS/Kasir) */}
+            {currentSetting.orderMode === "DIRECT" ? (
+              <button
+                type="button"
+                onClick={() => setIsTableModalOpen(true)}
+                className="btn-press inline-flex items-center gap-1.5 py-1 px-2.5 rounded-lg text-white hover:bg-white/10 active:scale-95 transition-all"
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-pulse" />
+                <span className="text-xs font-medium text-emerald-100/90">Meja</span>
+                <span className="text-sm font-extrabold text-white tracking-tight">{tableNumber}</span>
+                <ChevronDown className="w-3.5 h-3.5 text-white/70 ml-0.5" />
+              </button>
+            ) : (
+              <div className="inline-flex items-center gap-1.5 py-1 px-2.5 rounded-lg bg-white/15 text-white text-xs font-bold tracking-wide">
+                <span className="w-2 h-2 rounded-full bg-emerald-300 animate-pulse" />
+                <span>Pesan via WhatsApp</span>
+              </div>
+            )}
           </div>
 
           {/* Search Bar */}
@@ -374,7 +389,7 @@ export default function OrderClient({ initialCategories = [] }: OrderClientProps
             >
               {/* Category Section Header */}
               <div className="px-4 py-3 bg-canvas/90 backdrop-blur-xs border-b border-surface-border/60">
-                <h2 className="text-sm md:text-base font-extrabold text-ink tracking-tight">
+                <h2 className="text-md md:text-base font-extrabold text-ink tracking-tight uppercase">
                   {category.name}
                 </h2>
               </div>
