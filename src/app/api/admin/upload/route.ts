@@ -63,6 +63,7 @@ export async function POST(req: NextRequest) {
     const filename = `menu_${Date.now()}_${baseName}.webp`;
 
     let publicUrl = "";
+    let supabaseErrorMessage: string | null = null;
 
     // 1. Coba upload ke Supabase Storage (Bucket: 'menu-images')
     if (process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
@@ -83,15 +84,17 @@ export async function POST(req: NextRequest) {
           if (urlData?.publicUrl) {
             publicUrl = urlData.publicUrl;
           }
-        } else {
-          console.warn("Supabase upload notice:", uploadError?.message);
+        } else if (uploadError) {
+          console.error("Supabase upload error detail:", uploadError);
+          supabaseErrorMessage = uploadError.message;
         }
       } catch (err) {
-        console.warn("Failed uploading to Supabase Storage, fallback to local:", err);
+        console.error("Failed uploading to Supabase Storage exception:", err);
+        supabaseErrorMessage = err instanceof Error ? err.message : "Gagal upload ke Supabase Storage";
       }
     }
 
-    // 2. Fallback lokal ke public/uploads jika upload Supabase gagal atau di dev offline
+    // 2. Fallback lokal ke public/uploads hanya jika di environment lokal
     if (!publicUrl) {
       try {
         const uploadDir = path.join(process.cwd(), "public", "uploads");
@@ -100,9 +103,17 @@ export async function POST(req: NextRequest) {
         await writeFile(filePath, webpBuffer);
         publicUrl = `/uploads/${filename}`;
       } catch (fsErr) {
-        console.error("Local disk write error:", fsErr);
+        console.error("Local disk write error (expected on serverless):", fsErr);
         if (!publicUrl) {
-          throw new Error("Gagal menyimpan file gambar ke storage");
+          return NextResponse.json(
+            {
+              success: false,
+              error:
+                supabaseErrorMessage ||
+                "Gagal mengunggah foto ke storage. Pastikan bucket 'menu-images' sudah ada dan public di Supabase.",
+            },
+            { status: 500 }
+          );
         }
       }
     }
