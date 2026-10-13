@@ -26,7 +26,7 @@ export default async function AdminSettingsPage() {
       data: {
         id: "default",
         orderMode: "WHATSAPP",
-        whatsappNumber: "085117698117",
+        whatsappNumber: "085117693117",
       },
     });
   }

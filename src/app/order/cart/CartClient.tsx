@@ -34,7 +34,7 @@ interface CartClientProps {
 }
 
 export default function CartClient({
-  storeSetting = { orderMode: "WHATSAPP", whatsappNumber: "085117698117" },
+  storeSetting = { orderMode: "WHATSAPP", whatsappNumber: "085117693117" },
 }: CartClientProps) {
   const isHydrated = useSyncExternalStore(
     emptySubscribe,

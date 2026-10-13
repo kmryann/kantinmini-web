@@ -1,6 +1,7 @@
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 generator client {
@@ -108,6 +109,6 @@ model AuditLog {
 model StoreSetting {
   id              String   @id @default("default")
   orderMode       String   @default("DIRECT") // DIRECT (Kasir & POS) atau WHATSAPP (Catalog ke WA)
-  whatsappNumber  String   @default("085117698117")
+  whatsappNumber  String   @default("085117693117")
   updatedAt       DateTime @updatedAt
 }

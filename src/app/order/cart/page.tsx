@@ -12,7 +12,7 @@ export default async function CartPage() {
     whatsappNumber: string;
   } = {
     orderMode: "WHATSAPP",
-    whatsappNumber: "085117698117",
+    whatsappNumber: "085117693117",
   };
 
   try {
@@ -22,7 +22,7 @@ export default async function CartPage() {
     if (setting) {
       initialSetting = {
         orderMode: (setting.orderMode as "DIRECT" | "WHATSAPP") || "WHATSAPP",
-        whatsappNumber: setting.whatsappNumber || "085117698117",
+        whatsappNumber: setting.whatsappNumber || "085117693117",
       };
     }
   } catch (err) {

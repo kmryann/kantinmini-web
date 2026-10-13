@@ -28,7 +28,7 @@ export default function SettingsClient({
     initialSetting.orderMode
   );
   const [whatsappNumber, setWhatsappNumber] = useState<string>(
-    initialSetting.whatsappNumber || "085117698117"
+    initialSetting.whatsappNumber || "085117693117"
   );
   const [isSaving, setIsSaving] = useState(false);
   const [feedback, setFeedback] = useState<{
@@ -250,14 +250,14 @@ export default function SettingsClient({
                   type="text"
                   value={whatsappNumber}
                   onChange={(e) => setWhatsappNumber(e.target.value)}
-                  placeholder="085117698117"
+                  placeholder="085117693117"
                   className="w-full bg-transparent text-sm md:text-base text-ink placeholder:text-ink-muted/50 focus:outline-hidden font-mono font-semibold"
                 />
               </div>
             </div>
             <p className="text-[11px] text-ink-muted">
-              Contoh: <span className="font-mono text-ink">085117698117</span> atau{" "}
-              <span className="font-mono text-ink">6285117698117</span>. Sistem akan otomatis memformat nomor saat membuka WhatsApp.
+              Contoh: <span className="font-mono text-ink">085117693117</span> atau{" "}
+              <span className="font-mono text-ink">6285117693117</span>. Sistem akan otomatis memformat nomor saat membuka WhatsApp.
             </p>
           </div>
         </div>

@@ -15,7 +15,7 @@ export async function GET() {
         data: {
           id: "default",
           orderMode: "WHATSAPP",
-          whatsappNumber: "085117698117",
+          whatsappNumber: "085117693117",
         },
       });
     }
@@ -80,7 +80,7 @@ export async function POST(req: NextRequest) {
       create: {
         id: "default",
         orderMode: orderMode || "WHATSAPP",
-        whatsappNumber: cleanWa || "085117698117",
+        whatsappNumber: cleanWa || "085117693117",
       },
     });
 

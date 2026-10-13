@@ -29,7 +29,7 @@ interface OrderClientProps {
 
 export default function OrderClient({
   initialCategories = [],
-  storeSetting = { orderMode: "WHATSAPP", whatsappNumber: "085117698117" },
+  storeSetting = { orderMode: "WHATSAPP", whatsappNumber: "085117693117" },
 }: OrderClientProps) {
   const searchParams = useSearchParams();
   const { setTableNumber, tableNumber, addToCart } = useCart();
