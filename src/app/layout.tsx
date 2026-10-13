@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
+import NavigationProgressBar from "@/components/common/NavigationProgressBar";
 import "./globals.css";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
@@ -36,7 +37,7 @@ export default function RootLayout({
       <body
         className={`${plusJakartaSans.className} bg-canvas text-ink min-h-screen selection:bg-brand-muted selection:text-ink antialiased`}
       >
-        {children}
+        <NavigationProgressBar>{children}</NavigationProgressBar>
       </body>
     </html>
   );
