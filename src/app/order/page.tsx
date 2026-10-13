@@ -5,8 +5,8 @@ import { prisma } from "@/lib/prisma";
 import { Loader2 } from "lucide-react";
 import { CategoryWithItems } from "@/types";
 
-// Force dynamic rendering so menu updates appear instantly
-export const dynamic = "force-dynamic";
+// Cache di Edge CDN selama 60 detik (bisa di-revalidate instan saat admin edit menu)
+export const revalidate = 60;
 
 export default async function OrderPage() {
   let initialCategories: CategoryWithItems[] = [];
@@ -20,18 +20,21 @@ export default async function OrderPage() {
   };
 
   try {
-    const rawCategories = await prisma.category.findMany({
-      orderBy: { sortOrder: "asc" },
-      include: {
-        menuItems: {
-          orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+    // Eksekusi kedua query database secara paralel (menghemat 50% waktu network RTT)
+    const [rawCategories, setting] = await Promise.all([
+      prisma.category.findMany({
+        orderBy: { sortOrder: "asc" },
+        include: {
+          menuItems: {
+            orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+          },
         },
-      },
-    });
+      }),
+      prisma.storeSetting.findUnique({
+        where: { id: "default" },
+      }),
+    ]);
 
-    const setting = await prisma.storeSetting.findUnique({
-      where: { id: "default" },
-    });
     if (setting) {
       initialSetting = {
         orderMode: (setting.orderMode as "DIRECT" | "WHATSAPP") || "WHATSAPP",

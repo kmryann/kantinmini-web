@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 
 export async function PUT(
@@ -56,6 +57,10 @@ export async function PUT(
       },
     });
 
+    revalidatePath("/order");
+    revalidatePath("/admin/menu");
+    revalidatePath("/manager/menu");
+
     return NextResponse.json({ success: true, data: updated });
   } catch (error: unknown) {
     console.error("Error updating menu item:", error);
@@ -88,6 +93,10 @@ export async function DELETE(
     await prisma.menuItem.delete({
       where: { id },
     });
+
+    revalidatePath("/order");
+    revalidatePath("/admin/menu");
+    revalidatePath("/manager/menu");
 
     return NextResponse.json({
       success: true,

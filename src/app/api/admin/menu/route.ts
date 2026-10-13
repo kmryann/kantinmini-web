@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 
 export async function GET() {
@@ -96,6 +97,11 @@ export async function POST(req: NextRequest) {
         category: true,
       },
     });
+
+    // Revalidate halaman order dan admin menu agar cache Edge Vercel langsung terupdate
+    revalidatePath("/order");
+    revalidatePath("/admin/menu");
+    revalidatePath("/manager/menu");
 
     return NextResponse.json({ success: true, data: newItem }, { status: 201 });
   } catch (error: unknown) {

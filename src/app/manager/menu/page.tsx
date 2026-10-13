@@ -10,16 +10,17 @@ export const metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function ManagerMenuPage() {
-  const categories = await prisma.category.findMany({
-    orderBy: { sortOrder: "asc" },
-  });
-
-  const items = await prisma.menuItem.findMany({
-    orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
-    include: {
-      category: true,
-    },
-  });
+  const [categories, items] = await Promise.all([
+    prisma.category.findMany({
+      orderBy: { sortOrder: "asc" },
+    }),
+    prisma.menuItem.findMany({
+      orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
+      include: {
+        category: true,
+      },
+    }),
+  ]);
 
   return (
     <AdminMenuClient
