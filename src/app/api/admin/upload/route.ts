@@ -39,15 +39,15 @@ export async function POST(req: NextRequest) {
     const bytes = await file.arrayBuffer();
     const inputBuffer = Buffer.from(bytes);
 
-    // Konversi PNG / JPG apa pun ke format WebP terkompresi dengan sharp
+    // Konversi PNG / JPG apa pun ke format WebP terkompresi dengan sharp (resolusi 800px ideal untuk katalog & sangat cepat)
     const webpBuffer = await sharp(inputBuffer)
       .resize({
-        width: 1200,
-        height: 1200,
+        width: 800,
+        height: 800,
         fit: "inside",
         withoutEnlargement: true,
       })
-      .webp({ quality: 85, effort: 4 })
+      .webp({ quality: 80, effort: 2 })
       .toBuffer();
 
     // Nama file unik dengan ekstensi .webp

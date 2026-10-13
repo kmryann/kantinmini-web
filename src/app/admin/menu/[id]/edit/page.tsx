@@ -17,18 +17,19 @@ export default async function AdminEditMenuPage({
 }) {
   const { id } = await params;
 
-  const item = await prisma.menuItem.findUnique({
-    where: { id },
-    include: { category: true },
-  });
+  const [item, categories] = await Promise.all([
+    prisma.menuItem.findUnique({
+      where: { id },
+      include: { category: true },
+    }),
+    prisma.category.findMany({
+      orderBy: { sortOrder: "asc" },
+    }),
+  ]);
 
   if (!item) {
     notFound();
   }
-
-  const categories = await prisma.category.findMany({
-    orderBy: { sortOrder: "asc" },
-  });
 
   return (
     <MenuFormPageClient

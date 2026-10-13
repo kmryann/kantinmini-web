@@ -355,6 +355,7 @@ export default function AdminLayoutClient({
               <Link
                 key={item.href}
                 href={item.href}
+                prefetch={true}
                 onClick={() => setIsMobileOpen(false)}
                 title={isCollapsed ? item.name : undefined}
                 className={`btn-press group relative flex items-center gap-3 px-3 py-2.5 rounded-xl font-bold text-sm transition-all ${

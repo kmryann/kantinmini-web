@@ -884,6 +884,7 @@ export default function AdminMenuClient({
 
             <Link
               href={`${pathname}/create`}
+              prefetch={true}
               className="btn-press inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand text-white text-xs sm:text-sm font-bold shadow-xs hover:bg-brand-hover transition-all cursor-pointer"
             >
               <Plus className="w-4 h-4" />
@@ -1185,6 +1186,7 @@ export default function AdminMenuClient({
                             <div className="flex items-center gap-1.5 shrink-0">
                               <Link
                                 href={`${pathname}/${item.id}/edit`}
+                                prefetch={true}
                                 className="btn-press p-2 rounded-xl bg-surface border border-surface-border text-ink hover:text-brand hover:border-brand/40 shadow-2xs transition-colors cursor-pointer"
                                 title="Edit Menu"
                               >
